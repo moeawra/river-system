@@ -7,6 +7,7 @@
     <title>河川分署工程提報系統</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
     <link rel="stylesheet" href="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.css">
+    <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5/dist/maplibre-gl.css">
     <style>
         * { box-sizing: border-box; }
 
@@ -64,11 +65,6 @@
 
         .page { display: none; }
         .page.active { display: block; }
-
-        #map {
-            height: calc(100vh - 165px);
-            min-height: 500px;
-        }
 
         .content-card {
             background: white;
@@ -1112,11 +1108,23 @@
     <div id="loginGate" class="login-gate">
         <div class="login-card">
             <h2>河川分署工程提報系統</h2>
-            <div class="login-subtitle">
-                請輸入河川分署代碼及4位數登入碼
-            </div>
-            <input id="loginDivisionCode" type="text" maxlength="20" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="河川分署代碼">
-            <div class="login-hint">河川分署代碼：01～10</div>
+<div class="login-subtitle">
+    請輸入機關或單位完整名稱及4位數登入碼
+</div>
+
+<input
+    id="loginDivisionCode"
+    type="text"
+    maxlength="20"
+    autocomplete="off"
+    autocapitalize="none"
+    spellcheck="false"
+    placeholder="分署／組室名稱"
+>
+
+<div class="login-hint">
+    例如：第Ｏ河川分署、ＯＯＯＯ組
+</div>
             <input id="loginCode" type="text" inputmode="numeric" maxlength="4" autocomplete="off" placeholder="請輸入登入碼">
             <button type="button" id="loginButton" class="primary-button">
                 登入
@@ -1140,14 +1148,15 @@
             <option value="9">第九河川分署</option>
             <option value="10">第十河川分署</option>
         </select>
+        <div class="toolbar-export-group">
+            <button type="button" class="primary-button" id="meetingExcelExportButton" style="display:none;">📥 匯出會議附件 Excel</button>
+            <span id="meetingExcelExportStatus" class="meeting-export-status"></span>
+        </div>
     </div>
     <div class="page-tabs">
-        <button type="button" class="tab-button active" data-page="mapPage">🗺 地圖查詢</button>
-        <button type="button" class="tab-button" data-page="dataEntryPage">✏️ 工程提報</button>
+        <button type="button" class="tab-button" id="adminBudgetOverviewTab" data-page="adminBudgetOverviewPage" style="display:none;">經費填報總覽</button>
+        <button type="button" class="tab-button active" data-page="dataEntryPage">✏️ 工程提報</button>
         <button type="button" class="tab-button" data-page="businessDataPage">📋 提報內容</button>
-    </div>
-    <div id="mapPage" class="page active">
-        <div id="map"></div>
     </div>
     <div id="businessDataPage" class="page">
         <div class="content-card">
@@ -1162,12 +1171,11 @@
                     <option value="appendix5">附表5－整建工程</option>
                     <option value="appendix6">附表6－構造物維修改善工程</option>
                 </select>
-                <span class="appendix-phase-note">可切換查看單一附表，或選擇「全部附表」一次查看本分署所有案件、儀表板與工程位置。</span>
+                <span class="appendix-phase-note"></span>
             </div>
             <div class="data-header">
                 <h2 id="businessDataTitle">附表1-「基礎設施防護-中央管河川整體改善」案件明細表</h2>
                 <div class="data-header-actions">
-                    <span id="meetingExcelExportStatus" class="meeting-export-status"></span>
                     <div class="case-order-actions">
                         <span id="caseOrderStatus"></span>
                         <button type="button" class="secondary-button" id="startCaseOrderButton" style="display:none;">↕ 調整優先順序</button>
@@ -1175,7 +1183,6 @@
                         <button type="button" class="secondary-button" id="cancelCaseOrderButton" style="display:none;">取消排序</button>
                     </div>
                     <button type="button" class="secondary-button" id="refreshDataButton">重新載入資料</button>
-                    <button type="button" class="primary-button" id="meetingExcelExportButton" style="display:none;">📥 匯出會議附件 Excel</button>
                 </div>
             </div>
             <div id="dataStatus">尚未載入資料</div>
@@ -1202,7 +1209,7 @@
             <div id="allAppendicesView" class="all-appendices-view" style="display:none;"></div>
         </div>
     </div>
-    <div id="dataEntryPage" class="page">
+    <div id="dataEntryPage" class="page active">
         <div class="content-card">
             <div class="appendix-selector-panel">
                 <label for="appendixType">提報附表：</label>
@@ -1578,6 +1585,111 @@
         <input type="hidden" id="deleteAppendixType" name="appendixType" value="appendix1">
     </form>
     <iframe name="deleteFrame" id="deleteFrame" style="display:none;"></iframe>
+    <div id="adminBudgetOverviewPage" class="page">
+        <div class="admin-budget-overview-card">
+            <div class="admin-budget-overview-heading">
+                <div>
+                    <h2>經費填報總覽</h2>
+                </div>
+                <button type="button" class="secondary-button" id="refreshAdminBudgetOverviewButton">重新載入資料</button>
+            </div>
+
+            <div id="adminBudgetOverviewStatus" class="admin-budget-overview-status">尚未載入資料</div>
+
+            <div class="admin-budget-summary-grid">
+                <div class="admin-budget-summary-item">
+                    <span class="admin-budget-summary-label">表2已填報組室</span>
+                    <strong id="adminOfficeFilledCount">0 / 8</strong>
+                </div>
+                <div class="admin-budget-summary-item">
+                    <span class="admin-budget-summary-label">表2經費合計</span>
+                    <strong><span id="adminOfficeBudgetTotal">0</span> 千元</strong>
+                </div>
+                <div class="admin-budget-summary-item">
+                    <span class="admin-budget-summary-label">表3已更新分署</span>
+                    <strong id="adminRiverCoastUpdatedCount">0 / 10</strong>
+                </div>
+                <div class="admin-budget-summary-item">
+                    <span class="admin-budget-summary-label">最近更新</span>
+                    <strong id="adminBudgetLatestUpdated">尚無紀錄</strong>
+                </div>
+            </div>
+
+            <div class="admin-budget-view-tabs">
+                <button type="button" class="admin-budget-view-button active" data-admin-budget-view="office">表2－各組室經費</button>
+                <button type="button" class="admin-budget-view-button" data-admin-budget-view="riverCoast">表3－河川海岸組</button>
+            </div>
+
+            <section id="adminOfficeBudgetSection" class="admin-budget-section active">
+                <div class="admin-budget-section-heading">
+                    <div>
+                        <h3>表2－本署各組室辦理項目及經費</h3>
+                    </div>
+                </div>
+                <div class="admin-budget-table-wrap">
+                    <table class="admin-budget-table">
+                        <thead>
+                            <tr>
+                                <th>組室</th>
+                                <th>工作項目</th>
+                                <th>設備及投資</th>
+                                <th>委辦費</th>
+                                <th>一般性業務費</th>
+                                <th>獎補助費</th>
+                                <th>小計</th>
+                                <th>填報狀態</th>
+                                <th>最後更新</th>
+                            </tr>
+                        </thead>
+                        <tbody id="adminOfficeBudgetBody">
+                            <tr><td colspan="9" class="admin-budget-empty">尚未載入資料</td></tr>
+                        </tbody>
+                        <tfoot>
+                            <tr>
+                                <th colspan="6">表2經費合計</th>
+                                <th id="adminOfficeBudgetFootTotal">0</th>
+                                <th colspan="2"></th>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </section>
+
+            <section id="adminRiverCoastBudgetSection" class="admin-budget-section">
+                <div class="admin-budget-section-heading">
+                    <div>
+                        <h3>表3－各河川分署業務費明細</h3>
+                    </div>
+                </div>
+                <div class="admin-budget-table-wrap">
+                    <table class="admin-budget-table admin-river-coast-table">
+                        <thead>
+                            <tr>
+                                <th>河川分署</th>
+                                <th>出流管制審查</th>
+                                <th>水利建造物複查、縣市政府評鑑</th>
+                                <th>本頁兩欄合計</th>
+                                <th>填報狀態</th>
+                                <th>最後更新</th>
+                            </tr>
+                        </thead>
+                        <tbody id="adminRiverCoastBudgetBody">
+                            <tr><td colspan="6" class="admin-budget-empty">尚未載入資料</td></tr>
+                        </tbody>
+                        <tfoot>
+                            <tr>
+                                <th>合計</th>
+                                <th id="adminRiverCoastOutflowTotal">0</th>
+                                <th id="adminRiverCoastStructureTotal">0</th>
+                                <th id="adminRiverCoastGrandTotal">0</th>
+                                <th colspan="2"></th>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </section>
+        </div>
+    </div>
     <div id="lineMapModal" class="line-map-modal">
         <div class="line-map-modal-content">
             <div class="line-map-header">
@@ -1663,6 +1775,8 @@
     </div>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.js"></script>
+    <script src="https://unpkg.com/maplibre-gl@5/dist/maplibre-gl.js"></script>
+    <script src="https://unpkg.com/@maplibre/maplibre-gl-leaflet/leaflet-maplibre-gl.js"></script>
     <script>
     const GAS_URL = "https://script.google.com/macros/s/AKfycbzk4Ek12ShjL9wpQmU-d-eMhZAfVZ-g1JoGnCjgqoIsNmF6veB033Mt-GcyO_D94dPV/exec";
     const AUTH_STORAGE_KEY =
@@ -1895,7 +2009,7 @@
         if (!loginId) {
 
             loginMessage.textContent =
-                "請輸入河川分署代碼。";
+                "請請輸入機關或組室完整名稱。";
 
             loginDivisionCode.focus();
 
@@ -2155,14 +2269,9 @@
 
     }
     // -------------------------
-    // 地圖
+    // 河川分署基本資料
+    // （工程線形、提報內容位置圖等既有功能仍會使用座標）
     // -------------------------
-    const map = L.map("map").setView([23.7, 120.9], 7);
-
-    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-        attribution: "&copy; OpenStreetMap contributors"
-    }).addTo(map);
-
     const divisions = {
         1: { name: "第一河川分署", shortName: "一", lat: 24.75, lng: 121.75 },
         2: { name: "第二河川分署", shortName: "二", lat: 24.8, lng: 121.0 },
@@ -2175,8 +2284,6 @@
         9: { name: "第九河川分署", shortName: "九", lat: 23.98, lng: 121.6 },
         10: { name: "第十河川分署", shortName: "十", lat: 25.05, lng: 121.5 }
     };
-
-    let currentMarker = null;
 
     const divisionSelect = document.getElementById("division");
     const formDivision = document.getElementById("formDivision");
@@ -2205,27 +2312,6 @@
         // 分署切換時清除前一分署的私人參考圖層。
         resetRiverManagementLayer_();
         resetRiverLandlineLayer_();
-
-        if (!id) {
-            map.setView([23.7, 120.9], 7);
-            if (currentMarker) {
-                map.removeLayer(currentMarker);
-                currentMarker = null;
-            }
-            return;
-        }
-
-        const data = divisions[id];
-        map.flyTo([data.lat, data.lng], 10);
-
-        if (currentMarker) {
-            map.removeLayer(currentMarker);
-        }
-
-        currentMarker = L.marker([data.lat, data.lng])
-            .addTo(map)
-            .bindPopup(data.name)
-            .openPopup();
     });
 
     // =====================================================
@@ -3318,11 +3404,10 @@
 
         lineMap = L.map("lineMap").setView([23.7, 120.9], 7);
 
-        L.tileLayer(
-            "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-                attribution: "&copy; OpenStreetMap contributors"
-            }
-        ).addTo(lineMap);
+        // 使用 OpenFreeMap 向量底圖，避免直接存取 OSM 公益圖磚伺服器遭 403 封鎖。
+        L.maplibreGL({
+            style: "https://tiles.openfreemap.org/styles/liberty"
+        }).addTo(lineMap);
 
         initializeRiverManagementLayer_();
         initializeRiverLandlineLayer_();
@@ -3887,10 +3972,6 @@
             this.classList.add("active");
             document.getElementById(targetPage).classList.add("active");
 
-            if (targetPage === "mapPage") {
-                setTimeout(() => map.invalidateSize(), 100);
-            }
-
             if (targetPage === "businessDataPage") {
                 // 每次進入「提報內容」時，預設先看全部附表彙整總覽。
                 const businessAppendixSelect =
@@ -4409,7 +4490,7 @@
 
             helper.textContent =
                 restricted
-                    ? "本分署無轄管中央管區域排水，因此流域別不可選擇「區排」；選擇「河川」時系統會提供溪別名稱建議，選擇「海岸」時可直接輸入海岸名稱。"
+                    ? "本分署無轄管中央管區域排水；選擇「河川」時系統會提供溪別名稱建議，選擇「海岸」時可直接輸入海岸名稱。"
                     : "選擇「河川」或「區排」時，系統會依目前河川分署提供名稱建議；選擇「海岸」時可直接輸入海岸名稱。";
         }
 
@@ -7110,7 +7191,7 @@ function renderBusinessDataRows(
                             " 資料讀取逾時"
                         )
                     );
-                }, 15000);
+                }, 45000);
 
             window[callbackName] =
                 function(response) {
@@ -7426,7 +7507,7 @@ function renderBusinessDataRows(
                 "all-appendices-note";
 
             note.textContent =
-                "本分署無轄管中央管區域排水，因此「全部附表」總覽不列入附表2。";
+                "本分署無轄管中央管區域排水。";
 
             allAppendicesView.appendChild(
                 note
@@ -7687,19 +7768,94 @@ function renderBusinessDataRows(
             setTimeout(function() {
                 dataStatus.textContent =
                     "全部附表資料讀取逾時，請確認網路問題。";
-            }, 25000);
+            }, 300000);
 
         try {
 
-            const results =
-                await Promise.all(
-                    appendixTypes.map(function(appendixType) {
-                        return readAppendixDataForAllView(
-                            appendixType,
-                            selectedDivision
-                        );
-                    })
-                );
+            // Apps Script 同時併發讀取 6 張工作表時，偶爾會有單一請求失敗。
+            // 改為逐張附表依序讀取，與「單獨查看附表」使用相同的穩定讀取方式。
+            const results = [];
+
+            for (
+                let appendixIndex = 0;
+                appendixIndex < appendixTypes.length;
+                appendixIndex++
+            ) {
+                const appendixType =
+                    appendixTypes[appendixIndex];
+
+                dataStatus.textContent =
+                    selectedDivision +
+                    "全部附表資料載入中..." +
+                    "（" +
+                    (appendixIndex + 1) +
+                    "/" +
+                    appendixTypes.length +
+                    "）";
+
+                let result = null;
+                let lastError = null;
+
+                // Apps Script 偶爾會因冷啟動或短暫網路延遲超過原本 15 秒。
+                // 全部附表模式若直接逾時會中止，因此改為較長等待並自動重試 1 次。
+                for (
+                    let attempt = 1;
+                    attempt <= 2;
+                    attempt++
+                ) {
+                    try {
+                        result =
+                            await readAppendixDataForAllView(
+                                appendixType,
+                                selectedDivision
+                            );
+                        lastError = null;
+                        break;
+                    } catch (error) {
+                        lastError = error;
+
+                        if (
+                            error &&
+                            error.message ===
+                                "登入已失效"
+                        ) {
+                            throw error;
+                        }
+
+                        if (attempt < 2) {
+                            dataStatus.textContent =
+                                selectedDivision +
+                                "全部附表資料載入中..." +
+                                "（" +
+                                (appendixIndex + 1) +
+                                "/" +
+                                appendixTypes.length +
+                                "，重新嘗試）";
+
+                            await new Promise(
+                                function(resolve) {
+                                    setTimeout(
+                                        resolve,
+                                        800
+                                    );
+                                }
+                            );
+                        }
+                    }
+                }
+
+                if (!result) {
+                    throw (
+                        lastError ||
+                        new Error(
+                            appendixType +
+                            " 資料讀取失敗"
+                        )
+                    );
+                }
+
+                results.push(result);
+            }
 
             clearTimeout(dataLoadTimer);
 
@@ -8570,11 +8726,10 @@ function handleBusinessData(
                 7
             );
 
-        L.tileLayer(
-            "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-                attribution: "&copy; OpenStreetMap contributors"
-            }
-        ).addTo(
+        // 使用 OpenFreeMap 向量底圖，避免直接存取 OSM 公益圖磚伺服器遭 403 封鎖。
+        L.maplibreGL({
+            style: "https://tiles.openfreemap.org/styles/liberty"
+        }).addTo(
             overviewLineMap
         );
 
@@ -8739,15 +8894,19 @@ function handleBusinessData(
         }
 
         try {
-            const groups =
-                await Promise.all(
-                    appendixTypes.map(function(appendixType) {
-                        return readOverviewLinesForAllView(
-                            appendixType,
-                            selectedDivision
-                        );
-                    })
-                );
+            // 與全部附表資料相同，工程線形亦改為逐張附表依序讀取，
+            // 避免同時向 Apps Script 發出多個 JSONP 請求。
+            const groups = [];
+
+            for (const appendixType of appendixTypes) {
+                const records =
+                    await readOverviewLinesForAllView(
+                        appendixType,
+                        selectedDivision
+                    );
+
+                groups.push(records);
+            }
 
             if (!isAllBusinessAppendicesMode()) {
                 return;
@@ -9203,7 +9362,7 @@ function handleBusinessData(
             caseCount +
             " 件工程、共 " +
             lineCount +
-            " 段工程線形；點選線形可查看提報工程名稱。";
+            " 段工程線形。";
     }
 
 
@@ -9247,11 +9406,10 @@ function handleBusinessData(
                 7
             );
 
-        L.tileLayer(
-            "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-                attribution: "&copy; OpenStreetMap contributors"
-            }
-        ).addTo(
+        // 使用 OpenFreeMap 向量底圖，避免直接存取 OSM 公益圖磚伺服器遭 403 封鎖。
+        L.maplibreGL({
+            style: "https://tiles.openfreemap.org/styles/liberty"
+        }).addTo(
             viewLineMap
         );
 
@@ -9750,7 +9908,7 @@ function openViewLineMap(
             meetingExcelExportStatus.textContent =
                 "已產製並下載 Excel，共匯入 " +
                 totalCount +
-                " 筆案件；私人雲端亦保留備份。";
+                " 筆案件。";
 
         } catch (error) {
             meetingExcelExportStatus.textContent =
@@ -11833,8 +11991,3691 @@ function openViewLineMap(
     renderBusinessDataHead();
     updateBusinessDataTitle();
     updateAppendixForm();
+
+
+/* =====================================================
+   表2－本署各組室辦理項目及經費：前端整合功能（已整合）
+
+   這段會：
+   1. 保留既有河川分署 / 管理者功能。
+   2. 新增 office 角色畫面。
+   3. 組室帳號登入後只顯示自己的表2填報頁。
+   4. 秘書室固定顯示「署本部」「所屬機關」兩區。
+   5. 小計即時計算，但不送出小計欄位。
+   ===================================================== */
+
+let currentAuthOfficeName = "";
+let officeBudgetSaving = false;
+let officeBudgetLoaded = false;
+
+
+function initializeOfficeBudgetModule() {
+
+    // -----------------------------
+    // 1. 登入畫面文字
+    // -----------------------------
+    const loginSubtitle =
+        document.querySelector(
+            ".login-subtitle"
+        );
+
+    const loginHint =
+        document.querySelector(
+            ".login-hint"
+        );
+
+if (loginSubtitle) {
+    loginSubtitle.textContent =
+        "請輸入機關或單位完整名稱及4位數登入碼";
+}
+
+if (loginHint) {
+    loginHint.textContent =
+        "例如：第Ｏ河川分署、ＯＯＯＯ組";
+}
+
+if (loginDivisionCode) {
+    loginDivisionCode.placeholder =
+        "機關／單位名稱";
+
+    loginDivisionCode.style.letterSpacing =
+        "normal";
+}
+
+
+    // -----------------------------
+    // 2. 表2組室填報頁樣式
+    // -----------------------------
+    const style =
+        document.createElement(
+            "style"
+        );
+
+    style.textContent = `
+        #officeBudgetPage {
+            min-height: calc(100vh - 70px);
+            padding: 24px 18px;
+        }
+
+        .office-budget-card {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 28px;
+            background: #fff;
+            border-radius: 8px;
+        }
+
+        .office-budget-heading {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 16px;
+            margin-bottom: 18px;
+        }
+
+        .office-budget-heading h2 {
+            margin: 0 0 6px;
+        }
+
+        .office-budget-meta {
+            color: #666;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .office-budget-section {
+            margin: 18px 0;
+            padding: 18px;
+            border: 1px solid #d8e0e8;
+            border-radius: 8px;
+            background: #fff;
+        }
+
+        .office-budget-section-title {
+            margin: 0 0 14px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #e5e7eb;
+            font-size: 17px;
+            font-weight: bold;
+        }
+
+        .office-budget-work-items {
+            width: 100%;
+            min-height: 230px;
+            resize: vertical;
+            padding: 12px;
+            border: 1px solid #bbb;
+            border-radius: 5px;
+            font-family: inherit;
+            font-size: 15px;
+            line-height: 1.65;
+            white-space: pre-wrap;
+        }
+
+        .office-budget-money-grid {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 14px;
+            margin-top: 16px;
+        }
+
+        .office-budget-money-field label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: bold;
+        }
+
+        .office-budget-money-field input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #bbb;
+            border-radius: 5px;
+            font-size: 16px;
+            font-family: inherit;
+            text-align: right;
+        }
+
+        .office-budget-subtotal {
+            margin-top: 14px;
+            padding: 12px 14px;
+            background: #f7f9fb;
+            border-radius: 6px;
+            text-align: right;
+            font-size: 16px;
+        }
+
+        .office-budget-total {
+            margin: 18px 0;
+            padding: 16px 18px;
+            background: #eef5fd;
+            border: 1px solid #c7dcf5;
+            border-radius: 7px;
+            font-size: 20px;
+            font-weight: bold;
+            text-align: right;
+        }
+
+        .office-budget-actions {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            flex-wrap: wrap;
+            margin-top: 18px;
+        }
+
+        #officeBudgetStatus {
+            color: #555;
+            font-weight: bold;
+        }
+
+        #officeBudgetStatus.success {
+            color: #2e7d32;
+        }
+
+        #officeBudgetStatus.error {
+            color: #c62828;
+        }
+
+        @media (max-width: 900px) {
+            .office-budget-money-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+
+        @media (max-width: 560px) {
+            .office-budget-card {
+                padding: 18px;
+            }
+
+            .office-budget-money-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    `;
+
+    document.head.appendChild(
+        style
+    );
+
+
+    // -----------------------------
+    // 3. 動態建立組室填報頁
+    // -----------------------------
+    if (
+        !document.getElementById(
+            "officeBudgetPage"
+        )
+    ) {
+
+        const officePage =
+            document.createElement(
+                "div"
+            );
+
+        officePage.id =
+            "officeBudgetPage";
+
+        officePage.className =
+            "page";
+
+        officePage.innerHTML = `
+            <div class="office-budget-card">
+                <div class="office-budget-heading">
+                    <div>
+                        <h2>表2－本署各組室辦理項目及經費填報</h2>
+                        <div class="office-budget-meta">
+                            <span id="officeBudgetOfficeName"></span>
+                            <span id="officeBudgetLastUpdated"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="required-form-notice">
+                    ※ 請填列「工作項目、設備及投資、委辦費、一般性業務費、獎補助費」
+                </div>
+
+                <form
+                    id="officeBudgetForm"
+                    method="POST"
+                    target="officeBudgetFrame"
+                >
+                    <input
+                        type="hidden"
+                        name="action"
+                        value="saveOfficeBudget"
+                    >
+                    <input
+                        type="hidden"
+                        id="officeBudgetToken"
+                        name="token"
+                        value=""
+                    >
+                    <input
+                        type="hidden"
+                        id="officeBudgetRecordsJson"
+                        name="recordsJson"
+                        value=""
+                    >
+
+                    <div id="officeBudgetFields">
+                        資料載入中...
+                    </div>
+
+                    <div id="officeBudgetGrandTotal" class="office-budget-total">
+                        小計：0 千元
+                    </div>
+
+                    <div class="office-budget-actions">
+                        <button
+                            type="submit"
+                            id="officeBudgetSaveButton"
+                            class="primary-button"
+                        >
+                            儲存填報資料
+                        </button>
+
+                        <button
+                            type="button"
+                            id="officeBudgetReloadButton"
+                            class="secondary-button"
+                        >
+                            重新載入
+                        </button>
+
+                        <span id="officeBudgetStatus"></span>
+                    </div>
+                </form>
+
+                <iframe
+                    name="officeBudgetFrame"
+                    id="officeBudgetFrame"
+                    style="display:none;"
+                ></iframe>
+            </div>
+        `;
+
+        const firstPage =
+            document.querySelector(
+                ".page"
+            );
+
+        if (firstPage) {
+            firstPage.parentNode.insertBefore(
+                officePage,
+                firstPage
+            );
+        } else {
+            document.body.appendChild(
+                officePage
+            );
+        }
+    }
+
+
+    const officeBudgetForm =
+        document.getElementById(
+            "officeBudgetForm"
+        );
+
+    if (officeBudgetForm) {
+        officeBudgetForm.action =
+            GAS_URL;
+
+        officeBudgetForm.addEventListener(
+            "submit",
+            function(event) {
+
+                if (
+                    currentAuthRole !==
+                    "office"
+                ) {
+                    event.preventDefault();
+                    return;
+                }
+
+                const records =
+                    collectOfficeBudgetRecords();
+
+                document.getElementById(
+                    "officeBudgetToken"
+                ).value =
+                    getAuthToken();
+
+                document.getElementById(
+                    "officeBudgetRecordsJson"
+                ).value =
+                    JSON.stringify(
+                        records
+                    );
+
+                const status =
+                    document.getElementById(
+                        "officeBudgetStatus"
+                    );
+
+                status.className = "";
+                status.textContent =
+                    "資料儲存中...";
+
+                officeBudgetSaving = true;
+
+                const saveButton =
+                    document.getElementById(
+                        "officeBudgetSaveButton"
+                    );
+
+                if (saveButton) {
+                    saveButton.disabled =
+                        true;
+                }
+            }
+        );
+    }
+
+
+    const officeBudgetFrame =
+        document.getElementById(
+            "officeBudgetFrame"
+        );
+
+    if (officeBudgetFrame) {
+        officeBudgetFrame.addEventListener(
+            "load",
+            function() {
+
+                if (!officeBudgetSaving) {
+                    return;
+                }
+
+                officeBudgetSaving = false;
+
+                const saveButton =
+                    document.getElementById(
+                        "officeBudgetSaveButton"
+                    );
+
+                if (saveButton) {
+                    saveButton.disabled =
+                        false;
+                }
+
+                const status =
+                    document.getElementById(
+                        "officeBudgetStatus"
+                    );
+
+                status.className =
+                    "success";
+
+                status.textContent =
+                    "✓ 填報資料已送出。";
+
+                setTimeout(
+                    function() {
+                        loadOfficeBudgetData();
+                    },
+                    600
+                );
+            }
+        );
+    }
+
+
+    const reloadButton =
+        document.getElementById(
+            "officeBudgetReloadButton"
+        );
+
+    if (reloadButton) {
+        reloadButton.addEventListener(
+            "click",
+            function() {
+                loadOfficeBudgetData();
+            }
+        );
+    }
+}
+
+
+function formatOfficeBudgetNumber(
+    value
+) {
+
+    const number =
+        Number(value);
+
+    return new Intl.NumberFormat(
+        "zh-TW",
+        {
+            maximumFractionDigits: 2
+        }
+    ).format(
+        Number.isFinite(number)
+            ? number
+            : 0
+    );
+}
+
+
+function readOfficeBudgetInputNumber(
+    element
+) {
+
+    if (!element) {
+        return 0;
+    }
+
+    const number =
+        Number(element.value);
+
+    return Number.isFinite(number)
+        ? number
+        : 0;
+}
+
+
+function renderOfficeBudgetFields(
+    response
+) {
+
+    const container =
+        document.getElementById(
+            "officeBudgetFields"
+        );
+
+    const officeNameElement =
+        document.getElementById(
+            "officeBudgetOfficeName"
+        );
+
+    const lastUpdatedElement =
+        document.getElementById(
+            "officeBudgetLastUpdated"
+        );
+
+    if (!container) {
+        return;
+    }
+
+    if (officeNameElement) {
+        officeNameElement.textContent =
+            response.officeName ||
+            currentAuthOfficeName ||
+            "";
+    }
+
+    if (lastUpdatedElement) {
+        lastUpdatedElement.textContent =
+            response.lastUpdated
+                ? "　最後儲存：" +
+                  response.lastUpdated
+                : "　尚未儲存";
+    }
+
+
+    const records =
+        Array.isArray(response.records)
+            ? response.records
+            : [];
+
+    container.innerHTML = "";
+
+
+    records.forEach(
+        function(record, index) {
+
+            const section =
+                String(
+                    record.section || ""
+                );
+
+            const sectionTitle =
+                section
+                    ? section
+                    : response.officeName;
+
+            const wrapper =
+                document.createElement(
+                    "section"
+                );
+
+            wrapper.className =
+                "office-budget-section";
+
+            wrapper.dataset.index =
+                String(index);
+
+            wrapper.dataset.section =
+                section;
+
+            wrapper.innerHTML = `
+                <div class="office-budget-section-title">
+                    ${escapeOfficeBudgetHtml(sectionTitle)}
+                </div>
+
+                <label style="display:block;font-weight:bold;margin-bottom:6px;">
+                    工作項目
+                </label>
+                <textarea
+                    id="officeWorkItems_${index}"
+                    class="office-budget-work-items"
+                    placeholder="可在同一儲存格中一次填列多項工作內容，例如：1.……  2.……  3.……"
+                ></textarea>
+
+                <div class="office-budget-money-grid">
+                    <div class="office-budget-money-field">
+                        <label>設備及投資（千元）</label>
+                        <input id="officeEquipment_${index}" type="number" step="any">
+                    </div>
+                    <div class="office-budget-money-field">
+                        <label>委辦費（千元）</label>
+                        <input id="officeOutsourcing_${index}" type="number" step="any">
+                    </div>
+                    <div class="office-budget-money-field">
+                        <label>一般性業務費（千元）</label>
+                        <input id="officeGeneralBusiness_${index}" type="number" step="any">
+                    </div>
+                    <div class="office-budget-money-field">
+                        <label>獎補助費（千元）</label>
+                        <input id="officeSubsidy_${index}" type="number" step="any">
+                    </div>
+                </div>
+
+                <div id="officeSubtotal_${index}" class="office-budget-subtotal">
+                    本列小計：0 千元
+                </div>
+            `;
+
+            container.appendChild(
+                wrapper
+            );
+
+
+            document.getElementById(
+                "officeWorkItems_" + index
+            ).value =
+                record.workItems || "";
+
+            document.getElementById(
+                "officeEquipment_" + index
+            ).value =
+                record.equipment ||
+                record.equipment === 0
+                    ? record.equipment
+                    : "";
+
+            document.getElementById(
+                "officeOutsourcing_" + index
+            ).value =
+                record.outsourcing ||
+                record.outsourcing === 0
+                    ? record.outsourcing
+                    : "";
+
+            document.getElementById(
+                "officeGeneralBusiness_" + index
+            ).value =
+                record.generalBusiness ||
+                record.generalBusiness === 0
+                    ? record.generalBusiness
+                    : "";
+
+            document.getElementById(
+                "officeSubsidy_" + index
+            ).value =
+                record.subsidy ||
+                record.subsidy === 0
+                    ? record.subsidy
+                    : "";
+
+
+            [
+                "officeEquipment_" + index,
+                "officeOutsourcing_" + index,
+                "officeGeneralBusiness_" + index,
+                "officeSubsidy_" + index
+            ].forEach(
+                function(id) {
+                    const element =
+                        document.getElementById(id);
+
+                    if (element) {
+                        element.addEventListener(
+                            "input",
+                            updateOfficeBudgetTotals
+                        );
+                    }
+                }
+            );
+        }
+    );
+
+    officeBudgetLoaded = true;
+    updateOfficeBudgetTotals();
+}
+
+
+function escapeOfficeBudgetHtml(
+    text
+) {
+    return String(text || "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+}
+
+
+function collectOfficeBudgetRecords() {
+
+    const sections =
+        document.querySelectorAll(
+            ".office-budget-section"
+        );
+
+    const records = [];
+
+    sections.forEach(
+        function(sectionElement, index) {
+
+            records.push({
+                section:
+                    sectionElement.dataset.section || "",
+                workItems:
+                    document.getElementById(
+                        "officeWorkItems_" + index
+                    ).value || "",
+                equipment:
+                    document.getElementById(
+                        "officeEquipment_" + index
+                    ).value,
+                outsourcing:
+                    document.getElementById(
+                        "officeOutsourcing_" + index
+                    ).value,
+                generalBusiness:
+                    document.getElementById(
+                        "officeGeneralBusiness_" + index
+                    ).value,
+                subsidy:
+                    document.getElementById(
+                        "officeSubsidy_" + index
+                    ).value
+            });
+        }
+    );
+
+    return records;
+}
+
+
+function updateOfficeBudgetTotals() {
+
+    const sections =
+        document.querySelectorAll(
+            ".office-budget-section"
+        );
+
+    let grandTotal = 0;
+
+    sections.forEach(
+        function(sectionElement, index) {
+
+            const subtotal =
+                readOfficeBudgetInputNumber(
+                    document.getElementById(
+                        "officeEquipment_" + index
+                    )
+                ) +
+                readOfficeBudgetInputNumber(
+                    document.getElementById(
+                        "officeOutsourcing_" + index
+                    )
+                ) +
+                readOfficeBudgetInputNumber(
+                    document.getElementById(
+                        "officeGeneralBusiness_" + index
+                    )
+                ) +
+                readOfficeBudgetInputNumber(
+                    document.getElementById(
+                        "officeSubsidy_" + index
+                    )
+                );
+
+            grandTotal += subtotal;
+
+            const subtotalElement =
+                document.getElementById(
+                    "officeSubtotal_" + index
+                );
+
+            if (subtotalElement) {
+                subtotalElement.textContent =
+                    "本列小計：" +
+                    formatOfficeBudgetNumber(
+                        subtotal
+                    ) +
+                    " 千元";
+            }
+        }
+    );
+
+
+    const grandTotalElement =
+        document.getElementById(
+            "officeBudgetGrandTotal"
+        );
+
+    if (grandTotalElement) {
+        grandTotalElement.textContent =
+            "小計：" +
+            formatOfficeBudgetNumber(
+                grandTotal
+            ) +
+            " 千元";
+    }
+}
+
+
+function loadOfficeBudgetData() {
+
+    if (
+        currentAuthRole !==
+            "office" ||
+        !currentAuthOfficeName
+    ) {
+        return;
+    }
+
+    const status =
+        document.getElementById(
+            "officeBudgetStatus"
+        );
+
+    if (status) {
+        status.className = "";
+        status.textContent =
+            "資料載入中...";
+    }
+
+    const oldScript =
+        document.getElementById(
+            "officeBudgetJsonp"
+        );
+
+    if (oldScript) {
+        oldScript.remove();
+    }
+
+    const script =
+        document.createElement(
+            "script"
+        );
+
+    script.id =
+        "officeBudgetJsonp";
+
+    script.src =
+        GAS_URL +
+        "?action=readOfficeBudget" +
+        "&token=" +
+        encodeURIComponent(
+            getAuthToken()
+        ) +
+        "&callback=handleOfficeBudgetResponse" +
+        "&_=" +
+        Date.now();
+
+    script.onerror =
+        function() {
+            if (status) {
+                status.className =
+                    "error";
+                status.textContent =
+                    "資料讀取失敗，請稍後再試。";
+            }
+        };
+
+    document.body.appendChild(
+        script
+    );
+}
+
+
+function handleOfficeBudgetResponse(
+    response
+) {
+
+    if (
+        handleAuthFailure(
+            response
+        )
+    ) {
+        return;
+    }
+
+    const status =
+        document.getElementById(
+            "officeBudgetStatus"
+        );
+
+    if (
+        !response ||
+        response.success !== true
+    ) {
+        if (status) {
+            status.className =
+                "error";
+            status.textContent =
+                response &&
+                response.message
+                    ? response.message
+                    : "資料讀取失敗。";
+        }
+        return;
+    }
+
+    currentAuthOfficeName =
+        response.officeName ||
+        currentAuthOfficeName;
+
+    renderOfficeBudgetFields(
+        response
+    );
+
+    if (status) {
+        status.className = "";
+        status.textContent = "";
+    }
+}
+
+
+initializeOfficeBudgetModule();
+
+
+// =====================================================
+// 擴充既有登入權限：admin / division / office
+// =====================================================
+const originalApplyAuthScopeForOffice =
+    applyAuthScope;
+
+applyAuthScope = function(
+    role,
+    divisionId,
+    officeName
+) {
+
+    currentAuthRole =
+        role || "";
+
+    currentAuthOfficeName =
+        officeName || "";
+
+
+    const toolbar =
+        document.querySelector(
+            ".toolbar"
+        );
+
+    const pageTabs =
+        document.querySelector(
+            ".page-tabs"
+        );
+
+    const officePage =
+        document.getElementById(
+            "officeBudgetPage"
+        );
+
+
+    if (
+        currentAuthRole ===
+        "office"
+    ) {
+
+        currentAuthDivisionId = "";
+
+        if (toolbar) {
+            toolbar.style.display =
+                "none";
+        }
+
+        if (pageTabs) {
+            pageTabs.style.display =
+                "none";
+        }
+
+        document
+            .querySelectorAll(
+                ".page"
+            )
+            .forEach(
+                function(page) {
+                    page.classList.remove(
+                        "active"
+                    );
+                }
+            );
+
+        document
+            .querySelectorAll(
+                ".tab-button"
+            )
+            .forEach(
+                function(button) {
+                    button.classList.remove(
+                        "active"
+                    );
+                }
+            );
+
+        if (officePage) {
+            officePage.classList.add(
+                "active"
+            );
+        }
+
+        const officeNameElement =
+            document.getElementById(
+                "officeBudgetOfficeName"
+            );
+
+        if (officeNameElement) {
+            officeNameElement.textContent =
+                currentAuthOfficeName;
+        }
+
+        loadOfficeBudgetData();
+        return;
+    }
+
+
+    currentAuthOfficeName = "";
+
+    if (toolbar) {
+        toolbar.style.display = "";
+    }
+
+    if (pageTabs) {
+        pageTabs.style.display = "";
+    }
+
+    if (officePage) {
+        officePage.classList.remove(
+            "active"
+        );
+    }
+
+    originalApplyAuthScopeForOffice(
+        role,
+        divisionId
+    );
+
+
+    const hasActivePage =
+        !!document.querySelector(
+            ".page.active:not(#officeBudgetPage)"
+        );
+
+    if (!hasActivePage) {
+        const dataEntryPage =
+            document.getElementById(
+                "dataEntryPage"
+            );
+
+        if (dataEntryPage) {
+            dataEntryPage.classList.add(
+                "active"
+            );
+        }
+
+        const dataEntryTab =
+            document.querySelector(
+                '.tab-button[data-page="dataEntryPage"]'
+            );
+
+        if (dataEntryTab) {
+            dataEntryTab.classList.add(
+                "active"
+            );
+        }
+    }
+};
+
+
+const originalClearAuthTokenForOffice =
+    clearAuthToken;
+
+clearAuthToken = function() {
+
+    originalClearAuthTokenForOffice();
+
+    currentAuthOfficeName = "";
+    officeBudgetLoaded = false;
+
+};
+
+
+handleLoginResponse = function(
+    response
+) {
+
+    loginButton.disabled =
+        false;
+
+    if (
+        !response ||
+        response.success !== true ||
+        !response.token
+    ) {
+
+        loginMessage.textContent =
+            response &&
+            response.message
+                ? response.message
+                : "登入資料錯誤。";
+
+        loginCode.value = "";
+        loginCode.focus();
+
+        return;
+    }
+
+
+    setAuthToken(
+        response.token
+    );
+
+    applyAuthScope(
+        response.role,
+        response.divisionId,
+        response.officeName
+    );
+
+    hideLoginGate();
+};
+
+
+handleVerifySession = function(
+    response
+) {
+
+    if (
+        response &&
+        response.success === true
+    ) {
+
+        syncAuthTokenToForms();
+
+        applyAuthScope(
+            response.role,
+            response.divisionId,
+            response.officeName
+        );
+
+        hideLoginGate();
+        return;
+    }
+
+
+    clearAuthToken();
+
+    showLoginGate(
+        "請重新登入系統。"
+    );
+};
+
+
+/* =====================================================
+   表3－各河川分署業務費：河川海岸組前端功能
+   ===================================================== */
+
+let riverCoastBudgetSaving = false;
+let riverCoastBudgetLoaded = false;
+const riverCoastDirtyFields = new Set();
+
+
+function initializeRiverCoastBudgetModule() {
+
+    const loginSubtitle =
+        document.querySelector(
+            ".login-subtitle"
+        );
+
+    const loginHint =
+        document.querySelector(
+            ".login-hint"
+        );
+
+if (loginSubtitle) {
+    loginSubtitle.textContent =
+        "請輸入機關或單位完整名稱及4位數登入碼";
+}
+
+if (loginHint) {
+    loginHint.textContent =
+        "例如：第Ｏ河川分署、ＯＯＯＯ組";
+}
+
+
+    const style =
+        document.createElement(
+            "style"
+        );
+
+    style.textContent = `
+        #riverCoastBudgetPage {
+            min-height: calc(100vh - 70px);
+            padding: 24px 18px;
+        }
+
+        .river-coast-budget-card {
+            max-width: 1180px;
+            margin: 0 auto;
+            padding: 28px;
+            background: #fff;
+            border-radius: 8px;
+        }
+
+        .river-coast-budget-heading {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 16px;
+            margin-bottom: 18px;
+        }
+
+        .river-coast-budget-heading h2 {
+            margin: 0 0 6px;
+        }
+
+        .river-coast-budget-meta {
+            color: #666;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .river-coast-budget-note {
+            margin-bottom: 16px;
+            padding: 11px 13px;
+            background: #fff8e1;
+            border-left: 4px solid #f9a825;
+            color: #6d4c00;
+            line-height: 1.65;
+            font-size: 14px;
+        }
+
+        .river-coast-budget-table-wrap {
+            overflow-x: auto;
+            border: 1px solid #d8dee8;
+            border-radius: 7px;
+        }
+
+        .river-coast-budget-table {
+            width: 100%;
+            min-width: 860px;
+            border-collapse: collapse;
+            background: #fff;
+        }
+
+        .river-coast-budget-table th,
+        .river-coast-budget-table td {
+            border: 1px solid #d7dce2;
+            padding: 10px 12px;
+            vertical-align: middle;
+        }
+
+        .river-coast-budget-table th {
+            background: #EBF1DE;
+            text-align: center;
+            font-weight: bold;
+        }
+
+        .river-coast-budget-table td:first-child {
+            width: 170px;
+            text-align: center;
+            font-weight: bold;
+            white-space: nowrap;
+        }
+
+        .river-coast-budget-input {
+            width: 100%;
+            min-width: 150px;
+            padding: 9px 10px;
+            border: 1px solid #bbb;
+            border-radius: 4px;
+            font-size: 16px;
+            font-family: inherit;
+            text-align: right;
+            background: #fff;
+        }
+
+        .river-coast-budget-input.river-coast-dirty {
+            border-color: #1565c0;
+            background: #eef6ff;
+        }
+
+        .river-coast-updated-at {
+            color: #666;
+            font-size: 13px;
+            white-space: nowrap;
+            text-align: center;
+        }
+
+        .river-coast-budget-actions {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-top: 18px;
+        }
+
+        #riverCoastBudgetStatus {
+            min-height: 20px;
+            font-weight: bold;
+            color: #555;
+        }
+
+        #riverCoastBudgetStatus.success {
+            color: #2e7d32;
+        }
+
+        #riverCoastBudgetStatus.error {
+            color: #c62828;
+        }
+
+        @media (max-width: 700px) {
+            .river-coast-budget-card {
+                padding: 18px;
+            }
+        }
+    `;
+
+    document.head.appendChild(
+        style
+    );
+
+
+    if (
+        !document.getElementById(
+            "riverCoastBudgetPage"
+        )
+    ) {
+
+        const page =
+            document.createElement(
+                "div"
+            );
+
+        page.id =
+            "riverCoastBudgetPage";
+
+        page.className =
+            "page";
+
+        page.innerHTML = `
+            <div class="river-coast-budget-card">
+                <div class="river-coast-budget-heading">
+                    <div>
+                        <h2>表3－各河川分署業務費明細表</h2>
+                        <div class="river-coast-budget-meta">
+                            河川海岸組填報
+                            <span id="riverCoastBudgetLastUpdated"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="river-coast-budget-note">
+                    ※ 本頁只開放填列「出流管制審查」及「水利建造物複查、縣市政府評鑑」兩欄。<br>
+                </div>
+
+                <form
+                    id="riverCoastBudgetForm"
+                    method="POST"
+                    target="riverCoastBudgetFrame"
+                >
+                    <input
+                        type="hidden"
+                        name="action"
+                        value="saveRiverCoastBudget"
+                    >
+                    <input
+                        type="hidden"
+                        id="riverCoastBudgetToken"
+                        name="token"
+                        value=""
+                    >
+                    <input
+                        type="hidden"
+                        id="riverCoastBudgetRecordsJson"
+                        name="recordsJson"
+                        value="[]"
+                    >
+
+                    <div class="river-coast-budget-table-wrap">
+                        <table class="river-coast-budget-table">
+                            <thead>
+                                <tr>
+                                    <th>河川分署</th>
+                                    <th>出流管制審查<br>(河海組5科)</th>
+                                    <th>水利建造物複查、縣市政府評鑑<br>(河海組3科)</th>
+                                    <th>最後更新</th>
+                                </tr>
+                            </thead>
+                            <tbody id="riverCoastBudgetBody"></tbody>
+                        </table>
+                    </div>
+
+                    <div class="river-coast-budget-actions">
+                        <button
+                            type="submit"
+                            id="riverCoastBudgetSaveButton"
+                            class="primary-button"
+                        >
+                            儲存本次修改
+                        </button>
+
+                        <button
+                            type="button"
+                            id="riverCoastBudgetReloadButton"
+                            class="secondary-button"
+                        >
+                            重新載入
+                        </button>
+
+                        <span id="riverCoastBudgetStatus"></span>
+                    </div>
+                </form>
+
+                <iframe
+                    name="riverCoastBudgetFrame"
+                    id="riverCoastBudgetFrame"
+                    style="display:none;"
+                ></iframe>
+            </div>
+        `;
+
+        const firstPage =
+            document.querySelector(
+                ".page"
+            );
+
+        if (firstPage) {
+            firstPage.parentNode.insertBefore(
+                page,
+                firstPage
+            );
+        } else {
+            document.body.appendChild(
+                page
+            );
+        }
+    }
+
+
+    renderRiverCoastBudgetRows(
+        []
+    );
+
+
+    const form =
+        document.getElementById(
+            "riverCoastBudgetForm"
+        );
+
+    if (form) {
+
+        form.action =
+            GAS_URL;
+
+        form.addEventListener(
+            "submit",
+            function(event) {
+
+                if (
+                    currentAuthRole !==
+                    "riverCoast"
+                ) {
+                    event.preventDefault();
+                    return;
+                }
+
+
+                const records =
+                    collectRiverCoastChangedRecords();
+
+                const status =
+                    document.getElementById(
+                        "riverCoastBudgetStatus"
+                    );
+
+
+                if (
+                    records.length === 0
+                ) {
+
+                    event.preventDefault();
+
+                    if (status) {
+                        status.className = "";
+                        status.textContent =
+                            "目前沒有尚未儲存的修改。";
+                    }
+
+                    return;
+                }
+
+
+                document.getElementById(
+                    "riverCoastBudgetToken"
+                ).value =
+                    getAuthToken();
+
+                document.getElementById(
+                    "riverCoastBudgetRecordsJson"
+                ).value =
+                    JSON.stringify(
+                        records
+                    );
+
+
+                if (status) {
+                    status.className = "";
+                    status.textContent =
+                        "資料儲存中...";
+                }
+
+
+                riverCoastBudgetSaving =
+                    true;
+
+
+                const saveButton =
+                    document.getElementById(
+                        "riverCoastBudgetSaveButton"
+                    );
+
+                if (saveButton) {
+                    saveButton.disabled =
+                        true;
+                }
+            }
+        );
+    }
+
+
+    const frame =
+        document.getElementById(
+            "riverCoastBudgetFrame"
+        );
+
+    if (frame) {
+        frame.addEventListener(
+            "load",
+            function() {
+
+                if (
+                    !riverCoastBudgetSaving
+                ) {
+                    return;
+                }
+
+                riverCoastBudgetSaving =
+                    false;
+
+                const saveButton =
+                    document.getElementById(
+                        "riverCoastBudgetSaveButton"
+                    );
+
+                if (saveButton) {
+                    saveButton.disabled =
+                        false;
+                }
+
+                const status =
+                    document.getElementById(
+                        "riverCoastBudgetStatus"
+                    );
+
+                if (status) {
+                    status.className =
+                        "success";
+                    status.textContent =
+                        "✓ 本次修改已送出，正在重新載入最新資料...";
+                }
+
+                riverCoastDirtyFields.clear();
+
+                setTimeout(
+                    function() {
+                        loadRiverCoastBudgetData();
+                    },
+                    500
+                );
+            }
+        );
+    }
+
+
+    const reloadButton =
+        document.getElementById(
+            "riverCoastBudgetReloadButton"
+        );
+
+    if (reloadButton) {
+        reloadButton.addEventListener(
+            "click",
+            function() {
+
+                if (
+                    riverCoastDirtyFields.size > 0 &&
+                    !confirm(
+                        "目前有尚未儲存的修改，確定要重新載入並放棄這些修改嗎？"
+                    )
+                ) {
+                    return;
+                }
+
+                riverCoastDirtyFields.clear();
+                loadRiverCoastBudgetData();
+            }
+        );
+    }
+}
+
+
+function getRiverCoastDivisionName(
+    divisionId
+) {
+
+    const division =
+        divisions[
+            String(
+                divisionId
+            )
+        ];
+
+    return division
+        ? division.name
+        : "";
+}
+
+
+function renderRiverCoastBudgetRows(
+    records
+) {
+
+    const body =
+        document.getElementById(
+            "riverCoastBudgetBody"
+        );
+
+    if (!body) {
+        return;
+    }
+
+
+    const recordMap = {};
+
+    (records || [])
+        .forEach(
+            function(record) {
+                recordMap[
+                    String(
+                        record.divisionId
+                    )
+                ] = record;
+            }
+        );
+
+
+    body.innerHTML = "";
+
+
+    for (
+        let divisionNumber = 1;
+        divisionNumber <= 10;
+        divisionNumber++
+    ) {
+
+        const divisionId =
+            String(
+                divisionNumber
+            );
+
+        const record =
+            recordMap[
+                divisionId
+            ] || {
+                divisionId:
+                    divisionId,
+                divisionName:
+                    getRiverCoastDivisionName(
+                        divisionId
+                    ),
+                outflowReview:
+                    0,
+                structureReview:
+                    0,
+                updatedAt:
+                    ""
+            };
+
+
+        const tr =
+            document.createElement(
+                "tr"
+            );
+
+
+        const nameTd =
+            document.createElement(
+                "td"
+            );
+
+        nameTd.textContent =
+            record.divisionName ||
+            getRiverCoastDivisionName(
+                divisionId
+            );
+
+        tr.appendChild(
+            nameTd
+        );
+
+
+        [
+            {
+                field:
+                    "outflowReview",
+                value:
+                    record.outflowReview
+            },
+            {
+                field:
+                    "structureReview",
+                value:
+                    record.structureReview
+            }
+        ].forEach(
+            function(item) {
+
+                const td =
+                    document.createElement(
+                        "td"
+                    );
+
+                const input =
+                    document.createElement(
+                        "input"
+                    );
+
+                input.type =
+                    "number";
+
+                input.min =
+                    "0";
+
+                input.step =
+                    "any";
+
+                input.className =
+                    "river-coast-budget-input";
+
+                input.dataset.divisionId =
+                    divisionId;
+
+                input.dataset.field =
+                    item.field;
+
+                input.value =
+                    item.value === undefined ||
+                    item.value === null ||
+                    item.value === ""
+                        ? "0"
+                        : String(
+                            item.value
+                        );
+
+
+                input.addEventListener(
+                    "input",
+                    function() {
+
+                        const key =
+                            this.dataset.divisionId +
+                            "|" +
+                            this.dataset.field;
+
+                        riverCoastDirtyFields.add(
+                            key
+                        );
+
+                        this.classList.add(
+                            "river-coast-dirty"
+                        );
+
+                        const status =
+                            document.getElementById(
+                                "riverCoastBudgetStatus"
+                            );
+
+                        if (status) {
+                            status.className = "";
+                            status.textContent =
+                                "尚有未儲存的修改。";
+                        }
+                    }
+                );
+
+
+                td.appendChild(
+                    input
+                );
+
+                tr.appendChild(
+                    td
+                );
+            }
+        );
+
+
+        const updatedTd =
+            document.createElement(
+                "td"
+            );
+
+        updatedTd.className =
+            "river-coast-updated-at";
+
+        updatedTd.textContent =
+            record.updatedAt ||
+            "尚未更新";
+
+        tr.appendChild(
+            updatedTd
+        );
+
+
+        body.appendChild(
+            tr
+        );
+    }
+
+
+    riverCoastDirtyFields.clear();
+}
+
+
+function readRiverCoastInputValue(
+    divisionId,
+    field
+) {
+
+    const input =
+        document.querySelector(
+            '.river-coast-budget-input[data-division-id="' +
+            divisionId +
+            '"][data-field="' +
+            field +
+            '"]'
+        );
+
+    if (!input) {
+        return 0;
+    }
+
+    const text =
+        String(
+            input.value || ""
+        ).trim();
+
+    if (text === "") {
+        return 0;
+    }
+
+    const number =
+        Number(
+            text
+        );
+
+    return Number.isFinite(number) &&
+        number >= 0
+            ? number
+            : 0;
+}
+
+
+function collectRiverCoastChangedRecords() {
+
+    const recordMap = {};
+
+
+    riverCoastDirtyFields.forEach(
+        function(key) {
+
+            const parts =
+                String(key).split(
+                    "|"
+                );
+
+            const divisionId =
+                parts[0] || "";
+
+            const field =
+                parts[1] || "";
+
+            if (
+                !divisionId ||
+                (
+                    field !==
+                        "outflowReview" &&
+                    field !==
+                        "structureReview"
+                )
+            ) {
+                return;
+            }
+
+
+            if (
+                !recordMap[
+                    divisionId
+                ]
+            ) {
+                recordMap[
+                    divisionId
+                ] = {
+                    divisionId:
+                        divisionId
+                };
+            }
+
+
+            recordMap[
+                divisionId
+            ][field] =
+                readRiverCoastInputValue(
+                    divisionId,
+                    field
+                );
+        }
+    );
+
+
+    return Object.keys(
+        recordMap
+    )
+        .sort(
+            function(a, b) {
+                return Number(a) -
+                    Number(b);
+            }
+        )
+        .map(
+            function(divisionId) {
+                return recordMap[
+                    divisionId
+                ];
+            }
+        );
+}
+
+
+function loadRiverCoastBudgetData() {
+
+    if (
+        currentAuthRole !==
+        "riverCoast"
+    ) {
+        return;
+    }
+
+
+    const status =
+        document.getElementById(
+            "riverCoastBudgetStatus"
+        );
+
+    if (status) {
+        status.className = "";
+        status.textContent =
+            "資料載入中...";
+    }
+
+
+    const oldScript =
+        document.getElementById(
+            "riverCoastBudgetJsonp"
+        );
+
+    if (oldScript) {
+        oldScript.remove();
+    }
+
+
+    const script =
+        document.createElement(
+            "script"
+        );
+
+    script.id =
+        "riverCoastBudgetJsonp";
+
+    script.src =
+        GAS_URL +
+        "?action=readRiverCoastBudget" +
+        "&token=" +
+        encodeURIComponent(
+            getAuthToken()
+        ) +
+        "&callback=handleRiverCoastBudgetResponse" +
+        "&_=" +
+        Date.now();
+
+
+    script.onerror =
+        function() {
+
+            if (status) {
+                status.className =
+                    "error";
+                status.textContent =
+                    "表3資料讀取失敗，請稍後再試。";
+            }
+        };
+
+
+    document.body.appendChild(
+        script
+    );
+}
+
+
+function handleRiverCoastBudgetResponse(
+    response
+) {
+
+    if (
+        handleAuthFailure(
+            response
+        )
+    ) {
+        return;
+    }
+
+
+    const status =
+        document.getElementById(
+            "riverCoastBudgetStatus"
+        );
+
+
+    if (
+        !response ||
+        response.success !== true
+    ) {
+
+        if (status) {
+            status.className =
+                "error";
+            status.textContent =
+                response &&
+                response.message
+                    ? response.message
+                    : "表3資料讀取失敗。";
+        }
+
+        return;
+    }
+
+
+    renderRiverCoastBudgetRows(
+        Array.isArray(
+            response.records
+        )
+            ? response.records
+            : []
+    );
+
+
+    const lastUpdated =
+        document.getElementById(
+            "riverCoastBudgetLastUpdated"
+        );
+
+    if (lastUpdated) {
+        lastUpdated.textContent =
+            response.lastUpdated
+                ? "｜最後更新：" +
+                  response.lastUpdated
+                : "｜目前尚無人工更新紀錄";
+    }
+
+
+    riverCoastBudgetLoaded =
+        true;
+
+
+    if (status) {
+        status.className = "";
+        status.textContent = "";
+    }
+}
+
+
+initializeRiverCoastBudgetModule();
+
+
+// =====================================================
+// 再擴充登入權限：riverCoast（河川海岸組）
+// =====================================================
+const originalApplyAuthScopeForRiverCoast =
+    applyAuthScope;
+
+applyAuthScope = function(
+    role,
+    divisionId,
+    officeName
+) {
+
+    currentAuthRole =
+        role || "";
+
+
+    const toolbar =
+        document.querySelector(
+            ".toolbar"
+        );
+
+    const pageTabs =
+        document.querySelector(
+            ".page-tabs"
+        );
+
+    const riverCoastPage =
+        document.getElementById(
+            "riverCoastBudgetPage"
+        );
+
+
+    if (
+        currentAuthRole ===
+        "riverCoast"
+    ) {
+
+        currentAuthDivisionId = "";
+        currentAuthOfficeName = "";
+
+        if (toolbar) {
+            toolbar.style.display =
+                "none";
+        }
+
+        if (pageTabs) {
+            pageTabs.style.display =
+                "none";
+        }
+
+        document
+            .querySelectorAll(
+                ".page"
+            )
+            .forEach(
+                function(page) {
+                    page.classList.remove(
+                        "active"
+                    );
+                }
+            );
+
+        document
+            .querySelectorAll(
+                ".tab-button"
+            )
+            .forEach(
+                function(button) {
+                    button.classList.remove(
+                        "active"
+                    );
+                }
+            );
+
+        if (riverCoastPage) {
+            riverCoastPage.classList.add(
+                "active"
+            );
+        }
+
+        loadRiverCoastBudgetData();
+        return;
+    }
+
+
+    if (riverCoastPage) {
+        riverCoastPage.classList.remove(
+            "active"
+        );
+    }
+
+
+    originalApplyAuthScopeForRiverCoast(
+        role,
+        divisionId,
+        officeName
+    );
+};
+
+
+const originalClearAuthTokenForRiverCoast =
+    clearAuthToken;
+
+clearAuthToken = function() {
+
+    originalClearAuthTokenForRiverCoast();
+
+    riverCoastBudgetLoaded = false;
+    riverCoastBudgetSaving = false;
+    riverCoastDirtyFields.clear();
+
+};
+
+
+
+// =====================================================
+// 管理者：經費填報總覽（唯讀）
+// =====================================================
+let adminBudgetOverviewLoaded = false;
+let adminBudgetOverviewLoading = false;
+
+function formatAdminBudgetNumber(value) {
+    const number = Number(value);
+    return new Intl.NumberFormat(
+        "zh-TW",
+        {
+            maximumFractionDigits: 2
+        }
+    ).format(
+        Number.isFinite(number)
+            ? number
+            : 0
+    );
+}
+
+function escapeAdminBudgetHtml(value) {
+    return String(
+        value === undefined || value === null
+            ? ""
+            : value
+    )
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}
+
+function renderAdminBudgetWorkItems(records) {
+    const list = Array.isArray(records)
+        ? records
+        : [];
+
+    if (list.length === 0) {
+        return '<span class="admin-budget-muted">尚未填列</span>';
+    }
+
+    const content = list.map(function(record) {
+        const section = String(record.section || "").trim();
+        const workItems = String(record.workItems || "").trim();
+        const sectionTitle = section
+            ? '<div class="admin-budget-work-section-title">' + escapeAdminBudgetHtml(section) + '</div>'
+            : '';
+        const workText = workItems
+            ? escapeAdminBudgetHtml(workItems).replace(/\r?\n/g, "<br>")
+            : '<span class="admin-budget-muted">尚未填列工作項目</span>';
+
+        return '<div class="admin-budget-work-block">' +
+            sectionTitle +
+            '<div class="admin-budget-work-text">' + workText + '</div>' +
+            '</div>';
+    }).join("");
+
+    return '<details class="admin-budget-work-details">' +
+        '<summary>查看內容</summary>' +
+        '<div class="admin-budget-work-content">' + content + '</div>' +
+        '</details>';
+}
+
+function getAdminOfficeStatus(office) {
+    const records = Array.isArray(office.records)
+        ? office.records
+        : [];
+    const updatedCount = records.filter(function(record) {
+        return !!String(record.updatedAt || "").trim();
+    }).length;
+
+    if (updatedCount === 0) {
+        return {
+            text: "尚未填報",
+            className: "pending"
+        };
+    }
+
+    if (updatedCount < records.length) {
+        return {
+            text: "部分填報",
+            className: "partial"
+        };
+    }
+
+    return {
+        text: "已填報",
+        className: "complete"
+    };
+}
+
+function renderAdminBudgetOverview(response) {
+    const officeBody = document.getElementById("adminOfficeBudgetBody");
+    const riverBody = document.getElementById("adminRiverCoastBudgetBody");
+    const offices = Array.isArray(response.offices)
+        ? response.offices
+        : [];
+    const riverCoast = response.riverCoast || {};
+    const riverRecords = Array.isArray(riverCoast.records)
+        ? riverCoast.records
+        : [];
+
+    const officeFilledCount = document.getElementById("adminOfficeFilledCount");
+    const officeBudgetTotal = document.getElementById("adminOfficeBudgetTotal");
+    const officeBudgetFootTotal = document.getElementById("adminOfficeBudgetFootTotal");
+    const riverUpdatedCount = document.getElementById("adminRiverCoastUpdatedCount");
+    const latestUpdated = document.getElementById("adminBudgetLatestUpdated");
+
+    if (officeFilledCount) {
+        officeFilledCount.textContent =
+            String(response.officeFilledCount || 0) +
+            " / " +
+            String(response.officeCount || offices.length || 0);
+    }
+
+    if (officeBudgetTotal) {
+        officeBudgetTotal.textContent =
+            formatAdminBudgetNumber(response.officeTotal || 0);
+    }
+
+    if (officeBudgetFootTotal) {
+        officeBudgetFootTotal.textContent =
+            formatAdminBudgetNumber(response.officeTotal || 0);
+    }
+
+    if (riverUpdatedCount) {
+        riverUpdatedCount.textContent =
+            String(riverCoast.updatedCount || 0) +
+            " / " +
+            String(riverCoast.totalCount || riverRecords.length || 0);
+    }
+
+    if (latestUpdated) {
+        latestUpdated.textContent =
+            response.latestUpdated || "尚無紀錄";
+    }
+
+    if (officeBody) {
+        if (offices.length === 0) {
+            officeBody.innerHTML =
+                '<tr><td colspan="9" class="admin-budget-empty">目前沒有各組室填報資料</td></tr>';
+        } else {
+            officeBody.innerHTML = offices.map(function(office) {
+                const records = Array.isArray(office.records)
+                    ? office.records
+                    : [];
+                const sums = records.reduce(function(total, record) {
+                    total.equipment += Number(record.equipment) || 0;
+                    total.outsourcing += Number(record.outsourcing) || 0;
+                    total.generalBusiness += Number(record.generalBusiness) || 0;
+                    total.subsidy += Number(record.subsidy) || 0;
+                    return total;
+                }, {
+                    equipment: 0,
+                    outsourcing: 0,
+                    generalBusiness: 0,
+                    subsidy: 0
+                });
+                const status = getAdminOfficeStatus(office);
+
+                return '<tr>' +
+                    '<td class="admin-budget-name-cell">' + escapeAdminBudgetHtml(office.officeName) + '</td>' +
+                    '<td>' + renderAdminBudgetWorkItems(records) + '</td>' +
+                    '<td class="admin-budget-number-cell">' + formatAdminBudgetNumber(sums.equipment) + '</td>' +
+                    '<td class="admin-budget-number-cell">' + formatAdminBudgetNumber(sums.outsourcing) + '</td>' +
+                    '<td class="admin-budget-number-cell">' + formatAdminBudgetNumber(sums.generalBusiness) + '</td>' +
+                    '<td class="admin-budget-number-cell">' + formatAdminBudgetNumber(sums.subsidy) + '</td>' +
+                    '<td class="admin-budget-number-cell admin-budget-total-cell">' + formatAdminBudgetNumber(office.total || 0) + '</td>' +
+                    '<td><span class="admin-budget-status-badge ' + status.className + '">' + status.text + '</span></td>' +
+                    '<td class="admin-budget-date-cell">' + escapeAdminBudgetHtml(office.lastUpdated || "—") + '</td>' +
+                    '</tr>';
+            }).join("");
+        }
+    }
+
+    let outflowTotal = 0;
+    let structureTotal = 0;
+
+    if (riverBody) {
+        if (riverRecords.length === 0) {
+            riverBody.innerHTML =
+                '<tr><td colspan="6" class="admin-budget-empty">目前沒有表3填報資料</td></tr>';
+        } else {
+            riverBody.innerHTML = riverRecords.map(function(record) {
+                const outflow = Number(record.outflowReview) || 0;
+                const structure = Number(record.structureReview) || 0;
+                const updated = !!String(record.updatedAt || "").trim();
+                outflowTotal += outflow;
+                structureTotal += structure;
+
+                return '<tr>' +
+                    '<td class="admin-budget-name-cell">' + escapeAdminBudgetHtml(record.divisionName) + '</td>' +
+                    '<td class="admin-budget-number-cell">' + formatAdminBudgetNumber(outflow) + '</td>' +
+                    '<td class="admin-budget-number-cell">' + formatAdminBudgetNumber(structure) + '</td>' +
+                    '<td class="admin-budget-number-cell admin-budget-total-cell">' + formatAdminBudgetNumber(outflow + structure) + '</td>' +
+                    '<td><span class="admin-budget-status-badge ' + (updated ? "complete" : "pending") + '">' + (updated ? "已更新" : "尚未更新") + '</span></td>' +
+                    '<td class="admin-budget-date-cell">' + escapeAdminBudgetHtml(record.updatedAt || "—") + '</td>' +
+                    '</tr>';
+            }).join("");
+        }
+    }
+
+    const outflowTotalElement = document.getElementById("adminRiverCoastOutflowTotal");
+    const structureTotalElement = document.getElementById("adminRiverCoastStructureTotal");
+    const grandTotalElement = document.getElementById("adminRiverCoastGrandTotal");
+
+    if (outflowTotalElement) {
+        outflowTotalElement.textContent = formatAdminBudgetNumber(outflowTotal);
+    }
+    if (structureTotalElement) {
+        structureTotalElement.textContent = formatAdminBudgetNumber(structureTotal);
+    }
+    if (grandTotalElement) {
+        grandTotalElement.textContent = formatAdminBudgetNumber(outflowTotal + structureTotal);
+    }
+}
+
+function handleAdminBudgetOverviewResponse(response) {
+    adminBudgetOverviewLoading = false;
+    const status = document.getElementById("adminBudgetOverviewStatus");
+
+    if (handleAuthFailure(response)) {
+        return;
+    }
+
+    if (!response || response.success !== true) {
+        if (status) {
+            status.className = "admin-budget-overview-status error";
+            status.textContent = response && response.message
+                ? response.message
+                : "資料讀取失敗。";
+        }
+        return;
+    }
+
+    renderAdminBudgetOverview(response);
+    adminBudgetOverviewLoaded = true;
+
+    if (status) {
+        status.className = "admin-budget-overview-status success";
+        status.textContent = response.latestUpdated
+            ? "資料已載入｜最近更新：" + response.latestUpdated
+            : "資料已載入｜目前尚無人工更新紀錄";
+    }
+}
+
+function loadAdminBudgetOverviewData(forceReload) {
+    if (currentAuthRole !== "admin") {
+        return;
+    }
+
+    if (adminBudgetOverviewLoading) {
+        return;
+    }
+
+    if (adminBudgetOverviewLoaded && !forceReload) {
+        return;
+    }
+
+    adminBudgetOverviewLoading = true;
+
+    const status = document.getElementById("adminBudgetOverviewStatus");
+    if (status) {
+        status.className = "admin-budget-overview-status loading";
+        status.textContent = "經費填報資料載入中...";
+    }
+
+    const oldScript = document.getElementById("adminBudgetOverviewJsonp");
+    if (oldScript) {
+        oldScript.remove();
+    }
+
+    const script = document.createElement("script");
+    script.id = "adminBudgetOverviewJsonp";
+    script.src =
+        GAS_URL +
+        "?action=readAdminBudgetOverview" +
+        "&token=" + encodeURIComponent(getAuthToken()) +
+        "&callback=handleAdminBudgetOverviewResponse" +
+        "&_=" + Date.now();
+
+    script.onerror = function() {
+        adminBudgetOverviewLoading = false;
+        if (status) {
+            status.className = "admin-budget-overview-status error";
+            status.textContent = "資料讀取失敗，請稍後再試。";
+        }
+    };
+
+    document.body.appendChild(script);
+}
+
+const adminBudgetOverviewTab =
+    document.getElementById("adminBudgetOverviewTab");
+const refreshAdminBudgetOverviewButton =
+    document.getElementById("refreshAdminBudgetOverviewButton");
+
+if (adminBudgetOverviewTab) {
+    adminBudgetOverviewTab.addEventListener(
+        "click",
+        function() {
+            loadAdminBudgetOverviewData(false);
+        }
+    );
+}
+
+if (refreshAdminBudgetOverviewButton) {
+    refreshAdminBudgetOverviewButton.addEventListener(
+        "click",
+        function() {
+            adminBudgetOverviewLoaded = false;
+            loadAdminBudgetOverviewData(true);
+        }
+    );
+}
+
+document
+    .querySelectorAll(".admin-budget-view-button")
+    .forEach(function(button) {
+        button.addEventListener("click", function() {
+            const target = this.dataset.adminBudgetView;
+
+            document
+                .querySelectorAll(".admin-budget-view-button")
+                .forEach(function(item) {
+                    item.classList.remove("active");
+                });
+
+            this.classList.add("active");
+
+            const officeSection =
+                document.getElementById("adminOfficeBudgetSection");
+            const riverSection =
+                document.getElementById("adminRiverCoastBudgetSection");
+
+            if (officeSection) {
+                officeSection.classList.toggle(
+                    "active",
+                    target === "office"
+                );
+            }
+            if (riverSection) {
+                riverSection.classList.toggle(
+                    "active",
+                    target === "riverCoast"
+                );
+            }
+        });
+    });
+
+const originalApplyAuthScopeForAdminOverview =
+    applyAuthScope;
+
+applyAuthScope = function(
+    role,
+    divisionId,
+    officeName
+) {
+    originalApplyAuthScopeForAdminOverview(
+        role,
+        divisionId,
+        officeName
+    );
+
+    const adminTab =
+        document.getElementById("adminBudgetOverviewTab");
+    const adminPage =
+        document.getElementById("adminBudgetOverviewPage");
+
+    if (adminTab) {
+        adminTab.style.display =
+            role === "admin"
+                ? ""
+                : "none";
+    }
+
+    // 管理者登入（含既有 Session 恢復）後，預設進入「經費填報總覽」。
+    if (role === "admin") {
+        document
+            .querySelectorAll(".page")
+            .forEach(function(page) {
+                page.classList.remove("active");
+            });
+
+        document
+            .querySelectorAll(".tab-button")
+            .forEach(function(button) {
+                button.classList.remove("active");
+            });
+
+        if (adminPage) {
+            adminPage.classList.add("active");
+        }
+
+        if (adminTab) {
+            adminTab.classList.add("active");
+        }
+
+        loadAdminBudgetOverviewData(false);
+        return;
+    }
+
+    if (role !== "admin") {
+        const wasActive =
+            !!(
+                adminPage &&
+                adminPage.classList.contains("active")
+            );
+
+        if (adminPage) {
+            adminPage.classList.remove("active");
+        }
+        if (adminTab) {
+            adminTab.classList.remove("active");
+        }
+
+        if (
+            wasActive &&
+            role !== "office" &&
+            role !== "riverCoast"
+        ) {
+            const dataEntryPage =
+                document.getElementById("dataEntryPage");
+            const dataEntryTab =
+                document.querySelector(
+                    '.tab-button[data-page="dataEntryPage"]'
+                );
+
+            if (dataEntryPage) {
+                dataEntryPage.classList.add("active");
+            }
+            if (dataEntryTab) {
+                dataEntryTab.classList.add("active");
+            }
+        }
+    }
+};
+
+const originalClearAuthTokenForAdminOverview =
+    clearAuthToken;
+
+clearAuthToken = function() {
+    originalClearAuthTokenForAdminOverview();
+    adminBudgetOverviewLoaded = false;
+    adminBudgetOverviewLoading = false;
+};
+
+
     verifyExistingSession();
     </script>
+
+
+<!-- =========================================================
+     A + B 混合視覺版：公務專業系統 × 水利工程藍圖
+     僅覆寫視覺樣式，不變更任何功能、ID、事件或資料流程
+     ========================================================= -->
+<style id="abHybridVisualTheme">
+:root {
+    --ab-navy: #12324a;
+    --ab-navy-deep: #0a2538;
+    --ab-blue: #1e6f94;
+    --ab-blue-soft: #dcebf2;
+    --ab-teal: #197d83;
+    --ab-teal-dark: #11636a;
+    --ab-sand: #b89559;
+    --ab-sand-soft: #f4ede1;
+    --ab-ink: #173042;
+    --ab-muted: #667783;
+    --ab-line: #cbd9df;
+    --ab-line-dark: #9db2bc;
+    --ab-paper: #fbfcfc;
+    --ab-surface: #f2f6f7;
+    --ab-panel: rgba(255,255,255,.96);
+    --ab-danger: #a94646;
+    --ab-success: #2d755e;
+}
+
+html {
+    background: var(--ab-surface);
+}
+
+body {
+    color: var(--ab-ink);
+    background:
+        linear-gradient(rgba(246,249,250,.95), rgba(246,249,250,.97)),
+        repeating-linear-gradient(0deg, transparent 0 31px, rgba(30,111,148,.055) 31px 32px),
+        repeating-linear-gradient(90deg, transparent 0 31px, rgba(30,111,148,.045) 31px 32px);
+    font-family: "Microsoft JhengHei", "Noto Sans TC", Arial, sans-serif;
+    letter-spacing: .01em;
+}
+
+body::before {
+    content: "";
+    position: fixed;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 7px;
+    z-index: 49999;
+    pointer-events: none;
+    background: linear-gradient(180deg, var(--ab-teal) 0%, var(--ab-blue) 48%, var(--ab-sand) 100%);
+}
+
+/* ===== 頂部識別 ===== */
+.header {
+    position: relative;
+    min-height: 96px;
+    padding: 20px 24px 18px 88px;
+    display: flex;
+    align-items: flex-start;
+    overflow: hidden;
+    color: #fff;
+    background:
+        radial-gradient(circle at 78% 118%, rgba(64,154,169,.38) 0 15%, transparent 16%),
+        linear-gradient(110deg, rgba(9,37,56,.98) 0%, rgba(17,62,88,.98) 48%, rgba(22,88,103,.96) 100%);
+    border-bottom: 1px solid rgba(255,255,255,.2);
+    box-shadow: none;
+    font-size: 29px;
+    font-weight: 700;
+    letter-spacing: .09em;
+}
+
+.header::before {
+    content: "≈";
+    position: absolute;
+    left: 24px;
+    top: 20px;
+    width: 48px;
+    height: 48px;
+    display: grid;
+    place-items: center;
+    border: 1px solid rgba(255,255,255,.78);
+    border-radius: 50%;
+    color: #9ee0e0;
+    font-family: Georgia, serif;
+    font-size: 44px;
+    line-height: 1;
+    transform: rotate(-6deg);
+    background: rgba(255,255,255,.035);
+}
+
+.header::after {
+    content: "水利工程資料管理平台   ·   RIVER ENGINEERING PROJECT MANAGEMENT SYSTEM";
+    position: absolute;
+    left: 90px;
+    bottom: 16px;
+    color: rgba(226,241,246,.84);
+    font-size: 11px;
+    font-weight: 400;
+    letter-spacing: .13em;
+}
+
+/* 工程藍圖線條 */
+.header {
+    background-image:
+        linear-gradient(90deg, rgba(255,255,255,.032) 1px, transparent 1px),
+        linear-gradient(rgba(255,255,255,.026) 1px, transparent 1px),
+        radial-gradient(circle at 78% 118%, rgba(64,154,169,.34) 0 15%, transparent 16%),
+        linear-gradient(110deg, rgba(9,37,56,.99) 0%, rgba(17,62,88,.98) 48%, rgba(22,88,103,.97) 100%);
+    background-size: 28px 28px, 28px 28px, auto, auto;
+}
+
+.toolbar {
+    position: relative;
+    padding: 16px 26px 15px;
+    background: rgba(251,252,252,.96);
+    border-bottom: 1px solid var(--ab-line);
+    box-shadow: inset 0 -1px 0 rgba(255,255,255,.8);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.toolbar-export-group {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    margin-left: 4px;
+}
+
+.toolbar-export-group .meeting-export-status {
+    max-width: 520px;
+    line-height: 1.5;
+}
+
+.toolbar::after {
+    content: "STA. 0+000   ───────────   STA. 1+250";
+    position: absolute;
+    right: 26px;
+    top: 18px;
+    color: #8ea4ae;
+    font: 11px/1.4 Consolas, monospace;
+    letter-spacing: .06em;
+    pointer-events: none;
+}
+
+.toolbar label {
+    color: var(--ab-navy);
+    font-weight: 700;
+}
+
+.toolbar select,
+.appendix-selector-panel select,
+.form-field input,
+.form-field select,
+.form-field textarea,
+#loginDivisionCode,
+#loginCode {
+    border: 1px solid var(--ab-line-dark);
+    border-radius: 2px;
+    background: #fff;
+    color: var(--ab-ink);
+    box-shadow: inset 0 1px 0 rgba(0,0,0,.02);
+}
+
+.toolbar select:focus,
+.appendix-selector-panel select:focus,
+.form-field input:focus,
+.form-field select:focus,
+.form-field textarea:focus,
+#loginDivisionCode:focus,
+#loginCode:focus {
+    outline: none;
+    border-color: var(--ab-teal);
+    box-shadow: 0 0 0 2px rgba(25,125,131,.12);
+}
+
+/* ===== 主選單 ===== */
+.page-tabs {
+    padding: 0 24px;
+    gap: 0;
+    background: var(--ab-navy-deep);
+    border: 0;
+    border-bottom: 1px solid #081d2b;
+}
+
+.tab-button {
+    position: relative;
+    min-width: 150px;
+    padding: 14px 22px 13px;
+    color: #ccdae1;
+    border: 0;
+    border-right: 1px solid rgba(255,255,255,.08);
+    border-bottom: 3px solid transparent;
+    border-radius: 0;
+    font-weight: 500;
+    transition: background .16s ease, color .16s ease, border-color .16s ease;
+}
+
+.tab-button:hover {
+    color: #fff;
+    background: rgba(255,255,255,.06);
+}
+
+.tab-button.active {
+    color: #fff;
+    background: linear-gradient(180deg, rgba(37,124,149,.4), rgba(20,87,113,.35));
+    border-bottom-color: #79cbd0;
+    font-weight: 700;
+}
+
+/* 移除頁籤 emoji 的 AI 模板感，只改顯示文字，不動事件 */
+.tab-button[data-page="dataEntryPage"],
+.tab-button[data-page="businessDataPage"] { font-size: 0; }
+.tab-button[data-page="dataEntryPage"]::before {
+    content: "▤  工程提報";
+    font-size: 15px;
+}
+.tab-button[data-page="businessDataPage"]::before {
+    content: "▦  提報內容";
+    font-size: 15px;
+}
+
+/* ===== 內容紙面 ===== */
+.page {
+    background: transparent;
+}
+
+.content-card {
+    position: relative;
+    max-width: 1460px;
+    margin: 24px auto 34px;
+    padding: 28px 30px 34px;
+    border: 1px solid var(--ab-line);
+    border-top: 4px solid var(--ab-teal);
+    border-radius: 2px;
+    background: var(--ab-panel);
+    box-shadow: 0 9px 26px rgba(18,50,74,.065);
+}
+
+.content-card::before {
+    content: "RIVER ENGINEERING  /  INTERNAL WORKFLOW";
+    position: absolute;
+    right: 24px;
+    top: -23px;
+    color: #79909a;
+    font: 10px/1 Consolas, monospace;
+    letter-spacing: .12em;
+}
+
+.content-card h2,
+.office-budget-heading h2,
+.river-coast-budget-heading h2 {
+    color: var(--ab-navy);
+    font-weight: 700;
+    letter-spacing: .035em;
+}
+
+.content-card h2 {
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--ab-line);
+}
+
+/* ===== 附表選擇 ===== */
+.appendix-selector-panel {
+    position: relative;
+    padding: 14px 16px 14px 20px;
+    border: 1px solid var(--ab-line);
+    border-left: 4px solid var(--ab-blue);
+    border-radius: 0;
+    background:
+        linear-gradient(90deg, rgba(220,235,242,.62), rgba(249,251,252,.96));
+}
+
+.appendix-selector-panel::after {
+    content: "FLOW / PROJECT DATA";
+    margin-left: auto;
+    color: #8ca0aa;
+    font: 10px Consolas, monospace;
+    letter-spacing: .12em;
+}
+
+.appendix-selector-panel label {
+    color: var(--ab-navy);
+}
+
+.appendix-phase-note,
+.helper-text,
+#dataStatus,
+.meeting-export-status,
+#caseOrderStatus,
+#overviewLineMapStatus {
+    color: var(--ab-muted);
+}
+
+/* ===== 操作按鈕 ===== */
+.primary-button,
+.secondary-button,
+.map-select-button,
+.google-map-button,
+.view-line-button,
+.case-edit-button,
+.case-delete-button {
+    border-radius: 2px;
+    font-weight: 600;
+    letter-spacing: .015em;
+    box-shadow: none;
+    transition: transform .1s ease, background .14s ease, border-color .14s ease;
+}
+
+.primary-button {
+    background: linear-gradient(180deg, var(--ab-teal), var(--ab-teal-dark));
+    border-color: var(--ab-teal-dark);
+    color: #fff;
+}
+.primary-button:hover { background: #0f656b; }
+.primary-button:active,
+.secondary-button:active,
+.map-select-button:active,
+.google-map-button:active { transform: translateY(1px); }
+
+.secondary-button,
+.map-select-button,
+.google-map-button,
+.view-line-button,
+.case-edit-button {
+    color: var(--ab-navy);
+    background: #fff;
+    border-color: var(--ab-line-dark);
+}
+
+.secondary-button:hover,
+.map-select-button:hover,
+.google-map-button:hover,
+.view-line-button:hover,
+.case-edit-button:hover {
+    background: #edf5f6;
+    border-color: var(--ab-teal);
+    color: var(--ab-teal-dark);
+}
+
+.case-delete-button {
+    color: var(--ab-danger);
+    border-color: #c98e8e;
+}
+
+/* ===== 表單 ===== */
+.form-section {
+    margin-bottom: 20px;
+    border: 1px solid var(--ab-line);
+    border-radius: 0;
+    background: rgba(255,255,255,.88);
+}
+
+.form-section-title {
+    position: relative;
+    padding: 11px 14px 11px 18px;
+    background: linear-gradient(90deg, #dcebf2, #edf4f6 68%, #f9fbfb);
+    color: var(--ab-navy);
+    border-left: 4px solid var(--ab-teal);
+    border-bottom: 1px solid var(--ab-line);
+    font-size: 16px;
+    letter-spacing: .035em;
+}
+
+.form-field label {
+    color: #2d495b;
+    font-size: 14px;
+}
+
+.readonly-input,
+.form-field input:disabled,
+.form-field select:disabled,
+.form-field textarea:disabled {
+    background: #eef2f3 !important;
+    color: #6b7b84;
+}
+
+.required-form-notice,
+.all-appendices-note {
+    border-left-color: var(--ab-sand);
+    background: var(--ab-sand-soft);
+    color: #665437;
+}
+
+.line-status {
+    border: 1px dashed var(--ab-line-dark);
+    border-radius: 0;
+    background: #f4f7f8;
+}
+
+/* ===== 儀表板 ===== */
+.dashboard-cards { gap: 12px; }
+.dashboard-card {
+    position: relative;
+    overflow: hidden;
+    min-height: 104px;
+    padding: 16px 18px 15px;
+    border: 1px solid var(--ab-line);
+    border-top: 3px solid var(--ab-blue);
+    border-radius: 1px;
+    background: linear-gradient(135deg, #fff 0%, #f7fafb 100%);
+}
+.dashboard-card:nth-child(2) { border-top-color: var(--ab-sand); }
+.dashboard-card:nth-child(3) { border-top-color: var(--ab-teal); }
+.dashboard-card::after {
+    content: "";
+    position: absolute;
+    right: -18px;
+    bottom: -34px;
+    width: 95px;
+    height: 95px;
+    border: 1px solid rgba(30,111,148,.10);
+    border-radius: 50%;
+}
+.dashboard-card-label {
+    color: #526874;
+    font-weight: 700;
+}
+.dashboard-card-value {
+    color: var(--ab-navy);
+    font-size: 28px;
+    letter-spacing: .025em;
+}
+.dashboard-card-unit { color: var(--ab-muted); }
+
+.dashboard-panel {
+    border: 1px solid var(--ab-line);
+    border-radius: 1px;
+    background: #fff;
+    padding: 15px 18px 17px;
+}
+.dashboard-panel-title {
+    padding-left: 10px;
+    border-left: 4px solid var(--ab-teal);
+    color: var(--ab-navy);
+}
+.dashboard-bar-track {
+    height: 9px;
+    border-radius: 0;
+    background: #e5ecef;
+}
+.dashboard-bar {
+    border-radius: 0;
+    background: linear-gradient(90deg, var(--ab-blue), #3d94ac);
+}
+.dashboard-bar-row:nth-child(3n) .dashboard-bar {
+    background: linear-gradient(90deg, var(--ab-teal), #61a9a7);
+}
+
+/* ===== 工程位置總覽 ===== */
+.overview-line-map-panel {
+    border: 1px solid var(--ab-line);
+    border-radius: 1px;
+    background: #fff;
+}
+.overview-line-map-header {
+    position: relative;
+    background:
+        repeating-linear-gradient(90deg, transparent 0 23px, rgba(30,111,148,.05) 23px 24px),
+        #eef4f6;
+    border-bottom-color: var(--ab-line);
+}
+.overview-line-map-header h3 {
+    color: var(--ab-navy);
+    letter-spacing: .025em;
+}
+.overview-line-map-header::after {
+    content: "N  /  RIVER ALIGNMENT";
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    color: #849aa4;
+    font: 10px Consolas, monospace;
+    letter-spacing: .09em;
+}
+
+/* ===== 表格 ===== */
+.table-wrap,
+.case-manager-table-wrap,
+.river-coast-budget-table-wrap {
+    border-color: var(--ab-line-dark);
+    background: #fff;
+}
+
+.business-table,
+.case-manager-table,
+.river-coast-budget-table {
+    color: #263f4e;
+}
+
+.business-table th,
+.business-table td,
+.case-manager-table th,
+.case-manager-table td,
+.river-coast-budget-table th,
+.river-coast-budget-table td {
+    border-color: #b8c8cf;
+}
+
+.business-table thead th,
+.case-manager-table th,
+.river-coast-budget-table th {
+    background: #dfeaf0;
+    color: var(--ab-navy);
+    border-color: #9fb5c0;
+    font-weight: 700;
+}
+
+.business-table tbody tr:nth-child(even),
+.case-manager-table tbody tr:nth-child(even),
+.river-coast-budget-table tbody tr:nth-child(even) {
+    background: #f7fafb;
+}
+
+.business-table tbody tr:hover,
+.case-manager-table tbody tr:hover,
+.river-coast-budget-table tbody tr:hover {
+    background: #edf5f7;
+}
+
+/* ===== 案件管理 ===== */
+.case-manager-panel {
+    border-color: var(--ab-line);
+    border-radius: 0;
+}
+.case-manager-heading {
+    background: #eaf1f4;
+    border-bottom-color: var(--ab-line);
+}
+.case-manager-heading h3 { color: var(--ab-navy); }
+.case-management-toolbar .active-mode {
+    background: var(--ab-navy);
+    border-color: var(--ab-navy);
+}
+
+/* ===== 全部附表 ===== */
+.all-appendix-section {
+    border-color: var(--ab-line);
+    border-radius: 1px;
+    box-shadow: none;
+}
+.all-appendix-section-header {
+    background: linear-gradient(90deg, #e3edf1, #f6f9fa);
+    border-bottom-color: var(--ab-line);
+}
+.all-appendix-section-title { color: var(--ab-navy); }
+
+/* ===== Modal ===== */
+.line-map-modal { background: rgba(5,26,40,.67); }
+.line-map-modal-content {
+    border: 1px solid #6f8a98;
+    border-radius: 2px;
+    box-shadow: 0 20px 60px rgba(0,0,0,.28);
+}
+.line-map-header,
+.line-reference-toolbar,
+.line-map-footer {
+    border-color: var(--ab-line);
+}
+.line-map-header { background: #eef4f6; }
+.line-reference-toolbar { background: #f7f9fa; }
+
+/* ===== 登入 ===== */
+.login-gate {
+    background:
+        linear-gradient(rgba(10,37,56,.90), rgba(10,37,56,.94)),
+        repeating-linear-gradient(0deg, transparent 0 31px, rgba(255,255,255,.05) 31px 32px),
+        repeating-linear-gradient(90deg, transparent 0 31px, rgba(255,255,255,.045) 31px 32px);
+}
+.login-card {
+    position: relative;
+    width: min(430px, calc(100vw - 40px));
+    padding: 34px 36px 32px;
+    border: 1px solid rgba(255,255,255,.2);
+    border-top: 5px solid #5db1b1;
+    border-radius: 2px;
+    box-shadow: 0 22px 60px rgba(0,0,0,.28);
+    background: rgba(251,252,252,.985);
+}
+.login-card::before {
+    content: "RIVER ENGINEERING  /  SECURE ACCESS";
+    display: block;
+    margin-bottom: 14px;
+    color: #79909a;
+    font: 10px Consolas, monospace;
+    letter-spacing: .11em;
+}
+.login-card h2 {
+    color: var(--ab-navy);
+    letter-spacing: .055em;
+}
+.login-subtitle { color: #566b76; }
+.login-message { color: var(--ab-danger); }
+
+/* ===== 表2：各組室經費 ===== */
+#officeBudgetPage {
+    background: transparent !important;
+}
+.office-budget-card {
+    position: relative;
+    max-width: 1220px !important;
+    padding: 28px 30px 34px !important;
+    border: 1px solid var(--ab-line) !important;
+    border-top: 4px solid var(--ab-teal) !important;
+    border-radius: 2px !important;
+    box-shadow: 0 9px 26px rgba(18,50,74,.065) !important;
+}
+.office-budget-section {
+    border-color: var(--ab-line) !important;
+    border-radius: 0 !important;
+}
+.office-budget-section-title {
+    color: var(--ab-navy) !important;
+    border-bottom-color: var(--ab-line) !important;
+}
+.office-budget-work-items,
+.office-budget-money-field input {
+    border-color: var(--ab-line-dark) !important;
+    border-radius: 2px !important;
+}
+.office-budget-subtotal {
+    border-left: 4px solid var(--ab-blue) !important;
+    border-radius: 0 !important;
+    background: #eef4f6 !important;
+}
+.office-budget-total {
+    border-color: #b8cbd2 !important;
+    border-left: 4px solid var(--ab-teal) !important;
+    border-radius: 0 !important;
+    background: #e9f3f3 !important;
+    color: var(--ab-navy) !important;
+}
+
+/* ===== 表3：河川海岸組經費 ===== */
+#riverCoastBudgetPage {
+    background: transparent !important;
+}
+.river-coast-budget-card {
+    position: relative;
+    max-width: 1260px !important;
+    padding: 28px 30px 34px !important;
+    border: 1px solid var(--ab-line) !important;
+    border-top: 4px solid var(--ab-teal) !important;
+    border-radius: 2px !important;
+    box-shadow: 0 9px 26px rgba(18,50,74,.065) !important;
+}
+.river-coast-budget-note {
+    border-left: 4px solid var(--ab-sand) !important;
+    border-radius: 0 !important;
+    background: var(--ab-sand-soft) !important;
+    color: #665437 !important;
+}
+.river-coast-budget-input {
+    border-color: var(--ab-line-dark) !important;
+    border-radius: 2px !important;
+}
+.river-coast-budget-input.river-coast-dirty {
+    border-color: var(--ab-sand) !important;
+    background: #fffaf0 !important;
+}
+
+/* ===== 狀態色 ===== */
+.line-reference-status.loading { color: var(--ab-blue); }
+.line-reference-status.success,
+#officeBudgetStatus.success { color: var(--ab-success); }
+.line-reference-status.error,
+#officeBudgetStatus.error { color: var(--ab-danger); }
+
+/* ===== 捲軸 ===== */
+* { scrollbar-color: #8ea5b0 #edf2f4; scrollbar-width: thin; }
+*::-webkit-scrollbar { width: 10px; height: 10px; }
+*::-webkit-scrollbar-track { background: #edf2f4; }
+*::-webkit-scrollbar-thumb { background: #91a6b0; border: 2px solid #edf2f4; }
+*::-webkit-scrollbar-thumb:hover { background: #728b97; }
+
+/* ===== 小螢幕 ===== */
+@media (max-width: 900px) {
+    body::before { width: 4px; }
+    .header {
+        min-height: 82px;
+        padding: 17px 16px 16px 68px;
+        font-size: 22px;
+    }
+    .header::before {
+        left: 16px;
+        top: 16px;
+        width: 40px;
+        height: 40px;
+        font-size: 36px;
+    }
+    .header::after {
+        left: 69px;
+        bottom: 12px;
+        font-size: 8px;
+        letter-spacing: .08em;
+    }
+    .toolbar::after { display: none; }
+    .toolbar-export-group {
+        width: 100%;
+        margin-left: 0;
+    }
+    .page-tabs { padding: 0 8px; }
+    .tab-button { min-width: 0; }
+    .content-card {
+        margin: 14px 10px 24px;
+        padding: 20px 16px 26px;
+    }
+    .content-card::before,
+    .appendix-selector-panel::after,
+    .overview-line-map-header::after { display: none; }
+}
+</style>
+
+
+<style id="adminBudgetOverviewTheme">
+#adminBudgetOverviewTab {
+    border-left: 1px solid rgba(18, 50, 74, .08);
+}
+
+#adminBudgetOverviewPage {
+    padding: 24px 18px 38px;
+    background: transparent;
+}
+
+.admin-budget-overview-card {
+    position: relative;
+    max-width: 1480px;
+    margin: 0 auto;
+    padding: 28px 30px 34px;
+    background: rgba(255, 255, 255, .97);
+    border: 1px solid var(--ab-line, #cbd9df);
+    border-top: 4px solid var(--ab-teal, #197d83);
+    border-radius: 2px;
+    box-shadow: 0 9px 26px rgba(18, 50, 74, .065);
+}
+
+.admin-budget-overview-card::after {
+    content: "BUDGET REVIEW  •  INTERNAL MANAGEMENT";
+    position: absolute;
+    right: 30px;
+    top: 10px;
+    color: rgba(30, 111, 148, .24);
+    font-size: 9px;
+    letter-spacing: .16em;
+    pointer-events: none;
+}
+
+.admin-budget-overview-heading {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 20px;
+    padding-bottom: 18px;
+    border-bottom: 1px solid var(--ab-line, #cbd9df);
+}
+
+.admin-budget-overview-heading h2 {
+    margin: 0 0 7px;
+    color: var(--ab-navy, #12324a);
+    font-size: 25px;
+    letter-spacing: .04em;
+}
+
+.admin-budget-overview-subtitle,
+.admin-budget-section-heading p {
+    margin: 0;
+    color: var(--ab-muted, #667783);
+    font-size: 13px;
+    line-height: 1.7;
+}
+
+.admin-budget-overview-status {
+    margin-top: 14px;
+    min-height: 22px;
+    color: var(--ab-muted, #667783);
+    font-size: 13px;
+}
+
+.admin-budget-overview-status.loading { color: var(--ab-blue, #1e6f94); }
+.admin-budget-overview-status.success { color: var(--ab-success, #2d755e); }
+.admin-budget-overview-status.error { color: var(--ab-danger, #a94646); }
+
+.admin-budget-summary-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 12px;
+    margin: 14px 0 20px;
+}
+
+.admin-budget-summary-item {
+    min-height: 92px;
+    padding: 17px 18px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    background:
+        linear-gradient(135deg, rgba(220, 235, 242, .58), rgba(255, 255, 255, .94));
+    border: 1px solid var(--ab-line, #cbd9df);
+    border-left: 4px solid var(--ab-blue, #1e6f94);
+}
+
+.admin-budget-summary-item:nth-child(2) { border-left-color: var(--ab-teal, #197d83); }
+.admin-budget-summary-item:nth-child(3) { border-left-color: var(--ab-sand, #b89559); }
+.admin-budget-summary-item:nth-child(4) { border-left-color: #758b96; }
+
+.admin-budget-summary-label {
+    color: var(--ab-muted, #667783);
+    font-size: 12px;
+    letter-spacing: .03em;
+}
+
+.admin-budget-summary-item strong {
+    margin-top: 7px;
+    color: var(--ab-navy, #12324a);
+    font-size: 22px;
+    font-weight: 700;
+}
+
+.admin-budget-summary-item:last-child strong {
+    font-size: 15px;
+    line-height: 1.5;
+}
+
+.admin-budget-view-tabs {
+    display: flex;
+    gap: 0;
+    margin-top: 8px;
+    border-bottom: 1px solid var(--ab-line, #cbd9df);
+}
+
+.admin-budget-view-button {
+    appearance: none;
+    padding: 12px 19px;
+    color: var(--ab-muted, #667783);
+    background: #f3f6f7;
+    border: 1px solid var(--ab-line, #cbd9df);
+    border-bottom: none;
+    border-radius: 0;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.admin-budget-view-button + .admin-budget-view-button {
+    border-left: none;
+}
+
+.admin-budget-view-button.active {
+    color: #fff;
+    background: var(--ab-navy, #12324a);
+    border-color: var(--ab-navy, #12324a);
+}
+
+.admin-budget-section {
+    display: none;
+    padding-top: 20px;
+}
+
+.admin-budget-section.active {
+    display: block;
+}
+
+.admin-budget-section-heading {
+    margin-bottom: 12px;
+}
+
+.admin-budget-section-heading h3 {
+    margin: 0 0 5px;
+    color: var(--ab-navy, #12324a);
+    font-size: 18px;
+}
+
+.admin-budget-table-wrap {
+    overflow-x: auto;
+    border: 1px solid var(--ab-line, #cbd9df);
+}
+
+.admin-budget-table {
+    width: 100%;
+    min-width: 1120px;
+    border-collapse: collapse;
+    background: #fff;
+    font-size: 13px;
+}
+
+.admin-budget-table th,
+.admin-budget-table td {
+    padding: 11px 10px;
+    border-right: 1px solid #dbe4e8;
+    border-bottom: 1px solid #dbe4e8;
+    vertical-align: top;
+}
+
+.admin-budget-table th:last-child,
+.admin-budget-table td:last-child {
+    border-right: none;
+}
+
+.admin-budget-table thead th {
+    color: var(--ab-navy, #12324a);
+    background: #e8f0f3;
+    text-align: center;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.admin-budget-table tbody tr:nth-child(even) {
+    background: #f8fafb;
+}
+
+.admin-budget-table tbody tr:hover {
+    background: #eef5f7;
+}
+
+.admin-budget-table tfoot th {
+    background: #e8efef;
+    color: var(--ab-navy, #12324a);
+    text-align: right;
+    font-weight: 700;
+}
+
+.admin-budget-name-cell {
+    min-width: 112px;
+    color: var(--ab-navy, #12324a);
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.admin-budget-number-cell {
+    text-align: right;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+}
+
+.admin-budget-total-cell {
+    color: var(--ab-teal-dark, #11636a);
+    font-weight: 700;
+}
+
+.admin-budget-date-cell {
+    min-width: 128px;
+    color: var(--ab-muted, #667783);
+    white-space: nowrap;
+}
+
+.admin-budget-work-details summary {
+    color: var(--ab-blue, #1e6f94);
+    font-weight: 700;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.admin-budget-work-content {
+    min-width: 300px;
+    max-width: 520px;
+    margin-top: 10px;
+    padding: 12px 14px;
+    color: var(--ab-ink, #173042);
+    background: #f7fafb;
+    border-left: 3px solid var(--ab-blue, #1e6f94);
+    line-height: 1.75;
+}
+
+.admin-budget-work-block + .admin-budget-work-block {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px dashed var(--ab-line, #cbd9df);
+}
+
+.admin-budget-work-section-title {
+    margin-bottom: 4px;
+    color: var(--ab-teal-dark, #11636a);
+    font-weight: 700;
+}
+
+.admin-budget-muted,
+.admin-budget-empty {
+    color: var(--ab-muted, #667783);
+}
+
+.admin-budget-empty {
+    padding: 24px !important;
+    text-align: center;
+}
+
+.admin-budget-status-badge {
+    display: inline-block;
+    min-width: 66px;
+    padding: 4px 8px;
+    text-align: center;
+    font-size: 12px;
+    font-weight: 700;
+    border: 1px solid transparent;
+}
+
+.admin-budget-status-badge.complete {
+    color: #27634f;
+    background: #e7f2ed;
+    border-color: #bfd9cd;
+}
+
+.admin-budget-status-badge.partial {
+    color: #7b6034;
+    background: #f8f0df;
+    border-color: #dfcca3;
+}
+
+.admin-budget-status-badge.pending {
+    color: #6b7880;
+    background: #eef1f2;
+    border-color: #d4dcdf;
+}
+
+@media (max-width: 1000px) {
+    .admin-budget-summary-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 700px) {
+    #adminBudgetOverviewPage {
+        padding: 14px 8px 26px;
+    }
+    .admin-budget-overview-card {
+        padding: 20px 14px 26px;
+    }
+    .admin-budget-overview-heading {
+        flex-direction: column;
+    }
+    .admin-budget-summary-grid {
+        grid-template-columns: 1fr;
+    }
+    .admin-budget-view-button {
+        flex: 1;
+        padding: 11px 8px;
+        font-size: 12px;
+    }
+}
+</style>
 </body>
 
 </html>
