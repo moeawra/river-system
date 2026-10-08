@@ -372,7 +372,7 @@
     cursor: not-allowed;
 }
 
-/* 工程線形地圖視窗 */
+/* 工程範圍繪製地圖視窗 */
 
 .line-map-modal {
     display: none;
@@ -1159,6 +1159,33 @@
         }
 
 </style>
+
+<style id="table4EcologyTheme">
+#table4EcologyPage { padding-bottom: 30px; }
+.table4-ecology-card { max-width: 1380px; }
+.table4-ecology-heading { display:flex; justify-content:space-between; gap:16px; align-items:flex-start; margin-bottom:18px; }
+.table4-ecology-meta { color:#667785; font-size:14px; margin-top:6px; }
+.table4-ecology-table-wrap { overflow-x:auto; border:1px solid var(--ab-line, #c9d5dc); }
+.table4-ecology-table { width:100%; border-collapse:collapse; min-width:1050px; background:#fff; }
+.table4-ecology-table th, .table4-ecology-table td { border:1px solid #d4dee4; padding:10px 12px; vertical-align:middle; }
+.table4-ecology-table th { background:#e6f0f4; color:#15384d; text-align:center; font-weight:700; }
+.table4-ecology-table td:first-child { min-width:130px; font-weight:700; text-align:center; }
+.table4-ecology-input { width:100%; box-sizing:border-box; border:1px solid #aebfca; padding:8px 9px; font-family:inherit; font-size:14px; background:#fff; }
+.table4-ecology-plan-input { min-width:360px; }
+.table4-ecology-number-input { min-width:130px; text-align:right; }
+.table4-ecology-project-input { min-width:190px; }
+.table4-ecology-actions, .admin-table4-actions { display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin-top:16px; }
+#table4EcologyStatus, #adminTable4SaveStatus { min-height:20px; font-weight:700; color:#52626d; }
+#table4EcologyStatus.success, #adminTable4SaveStatus.success { color:#2e7d32; }
+#table4EcologyStatus.error, #adminTable4SaveStatus.error { color:#c62828; }
+.table4-ecology-empty { text-align:center; color:#77848c; padding:24px !important; }
+.admin-table4-ecology-table { min-width:1250px; }
+.admin-table4-input { width:100%; box-sizing:border-box; padding:7px 8px; border:1px solid #b8c8d1; font-family:inherit; font-size:13px; background:#fff; }
+.admin-table4-plan-input { min-width:300px; }
+.admin-table4-number-input { min-width:115px; text-align:right; }
+.admin-table4-project-input { min-width:170px; }
+.admin-table4-input.dirty, .table4-ecology-input.dirty { background:#fff8df; border-color:#c89c2b; }
+</style>
 </head>
 
 <body>
@@ -1235,6 +1262,7 @@
     <div class="page-tabs">
         <button type="button" class="tab-button" id="adminBudgetOverviewTab" data-page="adminBudgetOverviewPage" style="display:none;">經費填報總覽</button>
         <button type="button" class="tab-button" id="table1BudgetMainTab" data-page="table1BudgetPage" style="display:none;">表1－經費填報</button>
+        <button type="button" class="tab-button" id="table4EcologyMainTab" data-page="table4EcologyPage" style="display:none;">表4－生態檢核</button>
         <button type="button" class="tab-button active" data-page="dataEntryPage">✏️ 工程提報</button>
         <button type="button" class="tab-button" data-page="businessDataPage">📋 提報內容</button>
     </div>
@@ -1319,7 +1347,7 @@
                         <div>
                             <h3>提報工程位置</h3>
                             <div id="overviewLineMapStatus">
-                                線形資料尚未載入
+                                工程範圍資料尚未載入
                             </div>
                         </div>
                     </div>
@@ -1333,6 +1361,50 @@
                 </table>
             </div>
             <div id="allAppendicesView" class="all-appendices-view" style="display:none;"></div>
+        </div>
+    </div>
+    <div id="table4EcologyPage" class="page">
+        <div class="content-card table4-ecology-card">
+            <div class="table4-ecology-heading">
+                <div>
+                    <h2>表4－各河川分署生態檢核案件明細表</h2>
+                    <div class="table4-ecology-meta">
+                        <span id="table4EcologyScopeLabel"></span>
+                        <span id="table4EcologyLastUpdated"></span>
+                    </div>
+                </div>
+            </div>
+
+            <form id="table4EcologyForm" method="POST" target="table4EcologyFrame">
+                <input type="hidden" name="action" value="saveTable4Ecology">
+                <input type="hidden" id="table4EcologyToken" name="token" value="">
+                <input type="hidden" id="table4EcologyRecordsJson" name="recordsJson" value="[]">
+
+                <div class="table4-ecology-table-wrap">
+                    <table class="table4-ecology-table">
+                        <thead>
+                            <tr>
+                                <th>單位</th>
+                                <th>計畫名稱</th>
+                                <th>116年度經費<br>(千元)</th>
+                                <th>116年度預估可支用經費<br>(千元)</th>
+                                <th>計畫編號</th>
+                            </tr>
+                        </thead>
+                        <tbody id="table4EcologyBody">
+                            <tr><td colspan="5" class="table4-ecology-empty">尚未載入資料</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="table4-ecology-actions">
+                    <button type="submit" id="table4EcologySaveButton" class="primary-button">儲存填報資料</button>
+                    <button type="button" id="table4EcologyReloadButton" class="secondary-button">重新載入</button>
+                    <span id="table4EcologyStatus"></span>
+                </div>
+            </form>
+
+            <iframe name="table4EcologyFrame" id="table4EcologyFrame" style="display:none;"></iframe>
         </div>
     </div>
     <div id="dataEntryPage" class="page active">
@@ -1614,39 +1686,39 @@
                 </section>
                 <section class="form-section">
                     <h3 class="form-section-title">
-                        工程線形
+                        工程範圍繪製
                     </h3>
                     <div class="form-grid two-col">
-                        <!-- 左側：工程線形繪製 -->
+                        <!-- 左側：工程範圍繪製 -->
                         <div class="form-field">
-                            <label>工程線形繪製</label>
+                            <label>工程範圍繪製</label>
                             <div class="line-draw-row">
                                 <button type="button" id="openLineMap" class="map-select-button">
-                                    🖊 繪製工程線形
+                                    🖊 繪製工程範圍
                                 </button>
                                 <button type="button" id="clearLine" class="secondary-button" disabled>
-                                    清除線形
+                                    清除工程範圍
                                 </button>
                             </div>
                             <div id="lineStatus" class="line-status">
-                                尚未繪製工程線形
+                                尚未繪製工程範圍
                             </div>
                             <!-- 真正送給 Apps Script 的 GeoJSON -->
                             <input type="hidden" id="lineGeoJSON" name="lineGeoJSON">
                         </div>
-                        <!-- 右側：由工程線形自動產生座標 -->
+                        <!-- 右側：由工程範圍自動產生座標 -->
                         <div class="form-field">
                             <label for="coordinate">
-                                工程線形代表座標點位(TWD97，經緯度)
+                                工程範圍代表座標點位(TWD97，經緯度)
                             </label>
-                            <textarea id="coordinate" name="coordinate" class="coordinate-result" rows="2" readonly placeholder="將依工程線形自動產生座標點位"></textarea>
+                            <textarea id="coordinate" name="coordinate" class="coordinate-result" rows="2" readonly placeholder="將依工程範圍自動產生代表座標點位"></textarea>
                             <div class="coordinate-result-actions">
                                 <button type="button" id="openGoogleMapsButton" class="google-map-button" disabled>
                                     📍 Google 地圖查看
                                 </button>
                             </div>
                             <div class="helper-text">
-                                系統將自動依每段線形平均位置，自動產生代表座標；如有多段線形，將依序產生多組座標。
+                                系統將自動依每段工程範圍線的平均位置產生代表座標；如有多段工程範圍線，將依序產生多組座標。
                             </div>
                         </div>
                     </div>
@@ -1682,15 +1754,15 @@
                     <h3 class="form-section-title">年度預估使用經費(千元)</h3>
                     <div class="form-grid">
                         <div class="form-field">
-                            <label for="budget116">115年(A)</label>
+                            <label for="budget116">116年(A)</label>
                             <input id="budget116" name="budget116" type="number" step="any">
                         </div>
                         <div class="form-field">
-                            <label for="budget117">116年(B)</label>
+                            <label for="budget117">117年(B)</label>
                             <input id="budget117" name="budget117" type="number" step="any">
                         </div>
                         <div class="form-field">
-                            <label for="budget118">117年(C)</label>
+                            <label for="budget118">118年(C)</label>
                             <input id="budget118" name="budget118" type="number" step="any">
                         </div>
                         <div class="form-field">
@@ -1764,6 +1836,14 @@
                     <strong id="adminRiverCoastUpdatedCount">0 / 10</strong>
                 </div>
                 <div class="admin-budget-summary-item">
+                    <span class="admin-budget-summary-label">表4已完整填報分署</span>
+                    <strong id="adminTable4CompletedCount">0 / 10</strong>
+                </div>
+                <div class="admin-budget-summary-item">
+                    <span class="admin-budget-summary-label">表4 116年度經費合計</span>
+                    <strong><span id="adminTable4AnnualBudgetTotal">0</span> 千元</strong>
+                </div>
+                <div class="admin-budget-summary-item">
                     <span class="admin-budget-summary-label">最近更新</span>
                     <strong id="adminBudgetLatestUpdated">尚無紀錄</strong>
                 </div>
@@ -1773,6 +1853,7 @@
                 <button type="button" class="admin-budget-view-button active" data-admin-budget-view="table1">表1</button>
                 <button type="button" class="admin-budget-view-button" data-admin-budget-view="office">表2</button>
                 <button type="button" class="admin-budget-view-button" data-admin-budget-view="riverCoast">表3</button>
+                <button type="button" class="admin-budget-view-button" data-admin-budget-view="table4">表4</button>
             </div>
 
             <section id="adminTable1BudgetSection" class="admin-budget-section active">
@@ -1787,7 +1868,7 @@
                             <tr>
                                 <th>經費控管組室</th>
                                 <th>工作內容</th>
-                                <th>115年度支用經費<br>(千元)</th>
+                                <th>116年度支用經費<br>(千元)</th>
                                 <th>填報狀態</th>
                                 <th>最後更新</th>
                             </tr>
@@ -1874,15 +1955,62 @@
                     </table>
                 </div>
             </section>
+
+            <section id="adminTable4EcologySection" class="admin-budget-section">
+                <div class="admin-budget-section-heading">
+                    <div>
+                        <h3>表4－各河川分署生態檢核案件明細</h3>
+                    </div>
+                </div>
+
+                <form id="adminTable4EcologyForm" method="POST" target="adminTable4EcologyFrame">
+                    <input type="hidden" name="action" value="saveTable4Ecology">
+                    <input type="hidden" id="adminTable4EcologyToken" name="token" value="">
+                    <input type="hidden" id="adminTable4EcologyRecordsJson" name="recordsJson" value="[]">
+
+                    <div class="admin-budget-table-wrap">
+                        <table class="admin-budget-table admin-table4-ecology-table">
+                            <thead>
+                                <tr>
+                                    <th>河川分署</th>
+                                    <th>計畫名稱</th>
+                                    <th>116年度經費<br>(千元)</th>
+                                    <th>116年度預估可支用經費<br>(千元)</th>
+                                    <th>計畫編號</th>
+                                    <th>填報狀態</th>
+                                    <th>最後更新</th>
+                                </tr>
+                            </thead>
+                            <tbody id="adminTable4EcologyBody">
+                                <tr><td colspan="7" class="admin-budget-empty">尚未載入資料</td></tr>
+                            </tbody>
+                            <tfoot>
+                                <tr>
+                                    <th colspan="2">合計</th>
+                                    <th id="adminTable4AnnualBudgetFootTotal">0</th>
+                                    <th id="adminTable4UsableBudgetFootTotal">0</th>
+                                    <th colspan="3"></th>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+
+                    <div class="admin-table4-actions">
+                        <button type="submit" id="adminTable4SaveButton" class="primary-button">儲存表4修改</button>
+                        <span id="adminTable4SaveStatus"></span>
+                    </div>
+                </form>
+                <iframe name="adminTable4EcologyFrame" id="adminTable4EcologyFrame" style="display:none;"></iframe>
+            </section>
         </div>
     </div>
     <div id="lineMapModal" class="line-map-modal">
         <div class="line-map-modal-content">
             <div class="line-map-header">
                 <div>
-                    <h3>工程線形繪製</h3>
+                    <h3>工程範圍繪製</h3>
                     <div class="line-map-help">
-                        請使用左側繪圖工具開始畫線；依序點選工程線形節點，完成後可再編輯節點。
+                        請使用左側繪圖工具繪製工程範圍；依序點選工程範圍線節點，完成後可再編輯節點。
                     </div>
                 </div>
                 <button type="button" id="closeLineMap" class="close-map-button">
@@ -1909,12 +2037,32 @@
                         未載入；此圖層僅供描繪參考，不會儲存至案件資料。
                     </span>
                 </div>
+
+                <div class="line-reference-item">
+                    <label class="line-reference-toggle" for="regionalDrainageGreenToggle">
+                        <input type="checkbox" id="regionalDrainageGreenToggle">
+                        <span>中央管區域排水設施範圍線(綠線)(參考)</span>
+                    </label>
+                    <span id="regionalDrainageGreenLayerStatus" class="line-reference-status">
+                        未載入；此圖層僅供描繪參考，不會儲存至案件資料。
+                    </span>
+                </div>
+
+                <div class="line-reference-item">
+                    <label class="line-reference-toggle" for="regionalDrainageRedToggle">
+                        <input type="checkbox" id="regionalDrainageRedToggle">
+                        <span>中央管區域排水用地範圍線(紅線)(參考)</span>
+                    </label>
+                    <span id="regionalDrainageRedLayerStatus" class="line-reference-status">
+                        未載入；此圖層僅供描繪參考，不會儲存至案件資料。
+                    </span>
+                </div>
             </div>
             <div id="lineMap"></div>
             <div class="line-map-footer">
                 <div>
                     <div>
-                        線形／節點：
+                        範圍線／節點：
                         <strong id="linePointCount">0</strong>
                     </div>
                     <div>
@@ -1929,7 +2077,7 @@
                         取消
                     </button>
                     <button type="button" id="confirmLineMap" class="primary-button" disabled>
-                        確定使用此線形
+                        確定使用此工程範圍
                     </button>
                 </div>
             </div>
@@ -1939,7 +2087,7 @@
         <div class="line-map-modal-content">
             <div class="line-map-header">
                 <div>
-                    <h3 id="viewLineTitle">工程線形</h3>
+                    <h3 id="viewLineTitle">工程範圍</h3>
                     <div id="viewLineInfo" class="line-map-help"></div>
                 </div>
                 <button type="button" id="closeViewLineMap" class="close-map-button">
@@ -1949,7 +2097,7 @@
             <div id="viewLineMap"></div>
             <div class="line-map-footer">
                 <div id="viewLineStatus" class="view-line-status">
-                    線形資料載入中...
+                    工程範圍資料載入中...
                 </div>
                 <div class="line-map-actions">
                     <button type="button" id="closeViewLineMapBottom" class="secondary-button">
@@ -2456,7 +2604,7 @@
     }
     // -------------------------
     // 河川分署基本資料
-    // （工程線形、提報內容位置圖等既有功能仍會使用座標）
+    // （工程範圍、提報內容位置圖等既有功能仍會使用座標）
     // -------------------------
     const divisions = {
         1: { name: "第一河川分署", shortName: "一", lat: 24.75, lng: 121.75 },
@@ -2502,10 +2650,12 @@
         // 分署切換時清除前一分署的私人參考圖層。
         resetRiverManagementLayer_();
         resetRiverLandlineLayer_();
+        resetRegionalDrainageGreenLayer_();
+        resetRegionalDrainageRedLayer_();
     });
 
     // =====================================================
-    // 工程線形繪製
+    // 工程範圍繪製
     // =====================================================
 
     const lineMapModal = document.getElementById("lineMapModal");
@@ -2539,6 +2689,26 @@
     const riverLandlineLayerStatus =
         document.getElementById(
             "riverLandlineLayerStatus"
+        );
+
+    const regionalDrainageGreenToggle =
+        document.getElementById(
+            "regionalDrainageGreenToggle"
+        );
+
+    const regionalDrainageGreenLayerStatus =
+        document.getElementById(
+            "regionalDrainageGreenLayerStatus"
+        );
+
+    const regionalDrainageRedToggle =
+        document.getElementById(
+            "regionalDrainageRedToggle"
+        );
+
+    const regionalDrainageRedLayerStatus =
+        document.getElementById(
+            "regionalDrainageRedLayerStatus"
         );
 
     const plannedStart = document.getElementById("plannedStart");
@@ -2817,6 +2987,28 @@
     let lineMap = null;
     let drawnItems = null;
 
+    // 使用者實際繪製的「工程範圍線」統一顯示樣式。
+    // 參考圖層（治理計畫線、用地範圍線、區排綠／紅線）維持既有顏色。
+    const ENGINEERING_RANGE_LINE_STYLE = {
+        color: "#111111",
+        weight: 4,
+        opacity: 1,
+        dashArray: "10 8",
+        lineCap: "round",
+        lineJoin: "round"
+    };
+
+    function applyEngineeringRangeLineStyle_(layer) {
+        if (
+            layer &&
+            typeof layer.setStyle === "function"
+        ) {
+            layer.setStyle(
+                ENGINEERING_RANGE_LINE_STYLE
+            );
+        }
+    }
+
     let riverManagementLayer = null;
     let loadedRiverManagementDivision = "";
     let riverManagementJsonpScript = null;
@@ -2824,6 +3016,14 @@
     let riverLandlineLayer = null;
     let loadedRiverLandlineDivision = "";
     let riverLandlineJsonpScript = null;
+
+    let regionalDrainageGreenLayer = null;
+    let loadedRegionalDrainageGreenDivision = "";
+    let regionalDrainageGreenJsonpScript = null;
+
+    let regionalDrainageRedLayer = null;
+    let loadedRegionalDrainageRedDivision = "";
+    let regionalDrainageRedJsonpScript = null;
 
 
     function updatePlannedDuration() {
@@ -2998,7 +3198,7 @@
 
 
     /**
-     * 更新工程線形視窗下方的統計資訊。
+     * 更新工程範圍繪製視窗下方的統計資訊。
      */
     function updateLineInformation() {
 
@@ -3043,7 +3243,7 @@
 
     /**
      * 建立水道治理計畫線專用 Leaflet Pane。
-     * z-index 低於一般 vector overlay，讓使用者實際繪製的工程線形顯示在上方。
+     * z-index 低於一般 vector overlay，讓使用者實際繪製的工程範圍線顯示在上方。
      */
     function initializeRiverManagementLayer_() {
 
@@ -3785,6 +3985,783 @@
     );
 
 
+
+    // =====================================================
+    // 中央管區域排水參考圖層
+    // 綠線：設施範圍線
+    // 紅線：用地範圍線（原始資料部分為 Polygon，只顯示外框）
+    // =====================================================
+
+    function setRegionalDrainageGreenStatus_(
+        message,
+        state
+    ) {
+        regionalDrainageGreenLayerStatus.textContent =
+            message || "";
+
+        regionalDrainageGreenLayerStatus.className =
+            "line-reference-status" +
+            (state ? " " + state : "");
+    }
+
+
+    function initializeRegionalDrainageGreenLayer_() {
+
+        if (
+            !lineMap ||
+            regionalDrainageGreenLayer
+        ) {
+            return;
+        }
+
+        if (
+            !lineMap.getPane(
+                "regionalDrainageGreenPane"
+            )
+        ) {
+            lineMap.createPane(
+                "regionalDrainageGreenPane"
+            );
+
+            lineMap.getPane(
+                "regionalDrainageGreenPane"
+            ).style.zIndex = 340;
+
+            lineMap.getPane(
+                "regionalDrainageGreenPane"
+            ).style.pointerEvents = "none";
+        }
+
+        regionalDrainageGreenLayer =
+            L.geoJSON(
+                null,
+                {
+                    pane:
+                        "regionalDrainageGreenPane",
+                    interactive: false,
+                    smoothFactor: 0,
+                    style: function() {
+                        return {
+                            color: "#00A651",
+                            weight: 4,
+                            opacity: 0.95,
+                            fill: false,
+                            lineCap: "round",
+                            lineJoin: "round"
+                        };
+                    }
+                }
+            );
+    }
+
+
+    function removeRegionalDrainageGreenJsonpScript_() {
+
+        if (
+            regionalDrainageGreenJsonpScript
+        ) {
+            regionalDrainageGreenJsonpScript.remove();
+            regionalDrainageGreenJsonpScript = null;
+        }
+    }
+
+
+    function resetRegionalDrainageGreenLayer_() {
+
+        removeRegionalDrainageGreenJsonpScript_();
+
+        loadedRegionalDrainageGreenDivision =
+            "";
+
+        if (regionalDrainageGreenToggle) {
+            regionalDrainageGreenToggle.checked =
+                false;
+        }
+
+        if (regionalDrainageGreenLayer) {
+
+            if (
+                lineMap &&
+                lineMap.hasLayer(
+                    regionalDrainageGreenLayer
+                )
+            ) {
+                lineMap.removeLayer(
+                    regionalDrainageGreenLayer
+                );
+            }
+
+            regionalDrainageGreenLayer.clearLayers();
+        }
+
+        setRegionalDrainageGreenStatus_(
+            "未載入；此圖層僅供描繪參考，不會儲存至案件資料。",
+            ""
+        );
+    }
+
+
+    function loadRegionalDrainageGreenLine_() {
+
+        const divisionId =
+            divisionSelect.value;
+
+        if (!divisionId) {
+
+            regionalDrainageGreenToggle.checked =
+                false;
+
+            alert(
+                "請先從頁面上方選擇河川分署。"
+            );
+
+            return;
+        }
+
+        initializeRegionalDrainageGreenLayer_();
+
+        // 已讀過同一分署時，不重複向 Drive 取檔；
+        // 即使該分署為 0 筆資料，也保留已載入狀態。
+        if (
+            loadedRegionalDrainageGreenDivision ===
+            divisionId
+        ) {
+
+            if (
+                regionalDrainageGreenLayer &&
+                regionalDrainageGreenLayer
+                    .getLayers()
+                    .length > 0
+            ) {
+                regionalDrainageGreenLayer.addTo(
+                    lineMap
+                );
+
+                setRegionalDrainageGreenStatus_(
+                    "中央管區域排水設施範圍線已顯示。",
+                    "success"
+                );
+            } else {
+                setRegionalDrainageGreenStatus_(
+                    "本分署目前無中央管區域排水設施範圍線資料。",
+                    ""
+                );
+            }
+
+            return;
+        }
+
+        removeRegionalDrainageGreenJsonpScript_();
+
+        regionalDrainageGreenLayer.clearLayers();
+
+        loadedRegionalDrainageGreenDivision =
+            "";
+
+        setRegionalDrainageGreenStatus_(
+            "中央管區域排水設施範圍線載入中...",
+            "loading"
+        );
+
+        const script =
+            document.createElement(
+                "script"
+            );
+
+        regionalDrainageGreenJsonpScript =
+            script;
+
+        script.src =
+            GAS_URL +
+            "?action=readRegionalDrainageGreenLine" +
+            "&division=" +
+            encodeURIComponent(
+                divisionId
+            ) +
+            "&token=" +
+            encodeURIComponent(
+                getAuthToken()
+            ) +
+            "&callback=handleRegionalDrainageGreenLineResponse" +
+            "&_t=" +
+            Date.now();
+
+        script.onerror =
+            function() {
+
+                removeRegionalDrainageGreenJsonpScript_();
+
+                regionalDrainageGreenToggle.checked =
+                    false;
+
+                setRegionalDrainageGreenStatus_(
+                    "中央管區域排水設施範圍線載入失敗，請稍後再試。",
+                    "error"
+                );
+            };
+
+        document.body.appendChild(
+            script
+        );
+    }
+
+
+    function handleRegionalDrainageGreenLineResponse(
+        response
+    ) {
+
+        removeRegionalDrainageGreenJsonpScript_();
+
+        if (
+            handleAuthFailure(
+                response
+            )
+        ) {
+
+            regionalDrainageGreenToggle.checked =
+                false;
+
+            if (
+                regionalDrainageGreenLayer &&
+                lineMap &&
+                lineMap.hasLayer(
+                    regionalDrainageGreenLayer
+                )
+            ) {
+                lineMap.removeLayer(
+                    regionalDrainageGreenLayer
+                );
+            }
+
+            setRegionalDrainageGreenStatus_(
+                "登入已失效，請重新登入後再載入中央管區域排水設施範圍線。",
+                "error"
+            );
+
+            return;
+        }
+
+        if (
+            !response ||
+            response.success !== true ||
+            !response.data
+        ) {
+
+            regionalDrainageGreenToggle.checked =
+                false;
+
+            setRegionalDrainageGreenStatus_(
+                response && response.message
+                    ? response.message
+                    : "中央管區域排水設施範圍線讀取失敗。",
+                "error"
+            );
+
+            return;
+        }
+
+        if (
+            String(response.division) !==
+            String(divisionSelect.value)
+        ) {
+            return;
+        }
+
+        initializeRegionalDrainageGreenLayer_();
+
+        regionalDrainageGreenLayer.clearLayers();
+
+        try {
+
+            regionalDrainageGreenLayer.addData(
+                response.data
+            );
+
+        } catch (error) {
+
+            regionalDrainageGreenToggle.checked =
+                false;
+
+            setRegionalDrainageGreenStatus_(
+                "中央管區域排水設施範圍線 GeoJSON 無法顯示。",
+                "error"
+            );
+
+            console.error(
+                "中央管區域排水設施範圍線顯示失敗：",
+                error
+            );
+
+            return;
+        }
+
+        loadedRegionalDrainageGreenDivision =
+            String(
+                response.division
+            );
+
+        const featureCount =
+            Number(
+                response.featureCount
+            ) || 0;
+
+        if (featureCount === 0) {
+
+            regionalDrainageGreenToggle.checked =
+                false;
+
+            setRegionalDrainageGreenStatus_(
+                "本分署目前無中央管區域排水設施範圍線資料。",
+                ""
+            );
+
+            return;
+        }
+
+        if (
+            regionalDrainageGreenToggle.checked
+        ) {
+            regionalDrainageGreenLayer.addTo(
+                lineMap
+            );
+        }
+
+        setRegionalDrainageGreenStatus_(
+            "已載入 " +
+            featureCount +
+            " 筆中央管區域排水設施範圍線；僅供描繪參考。",
+            "success"
+        );
+    }
+
+
+    regionalDrainageGreenToggle.addEventListener(
+        "change",
+        function() {
+
+            if (this.checked) {
+                loadRegionalDrainageGreenLine_();
+                return;
+            }
+
+            if (
+                regionalDrainageGreenLayer &&
+                lineMap &&
+                lineMap.hasLayer(
+                    regionalDrainageGreenLayer
+                )
+            ) {
+                lineMap.removeLayer(
+                    regionalDrainageGreenLayer
+                );
+            }
+
+            if (
+                loadedRegionalDrainageGreenDivision
+            ) {
+                setRegionalDrainageGreenStatus_(
+                    regionalDrainageGreenLayer
+                        .getLayers()
+                        .length > 0
+                        ? "中央管區域排水設施範圍線已隱藏；再次勾選即可顯示。"
+                        : "本分署目前無中央管區域排水設施範圍線資料。",
+                    ""
+                );
+            } else {
+                setRegionalDrainageGreenStatus_(
+                    "未載入；此圖層僅供描繪參考，不會儲存至案件資料。",
+                    ""
+                );
+            }
+        }
+    );
+
+
+    function setRegionalDrainageRedStatus_(
+        message,
+        state
+    ) {
+        regionalDrainageRedLayerStatus.textContent =
+            message || "";
+
+        regionalDrainageRedLayerStatus.className =
+            "line-reference-status" +
+            (state ? " " + state : "");
+    }
+
+
+    function initializeRegionalDrainageRedLayer_() {
+
+        if (
+            !lineMap ||
+            regionalDrainageRedLayer
+        ) {
+            return;
+        }
+
+        if (
+            !lineMap.getPane(
+                "regionalDrainageRedPane"
+            )
+        ) {
+            lineMap.createPane(
+                "regionalDrainageRedPane"
+            );
+
+            // 稍高於區排綠線，但仍低於河川紅線及工程範圍線。
+            lineMap.getPane(
+                "regionalDrainageRedPane"
+            ).style.zIndex = 342;
+
+            lineMap.getPane(
+                "regionalDrainageRedPane"
+            ).style.pointerEvents = "none";
+        }
+
+        regionalDrainageRedLayer =
+            L.geoJSON(
+                null,
+                {
+                    pane:
+                        "regionalDrainageRedPane",
+                    interactive: false,
+                    smoothFactor: 0,
+                    style: function() {
+                        return {
+                            color: "#D32F2F",
+                            weight: 4,
+                            opacity: 0.95,
+                            fill: false,
+                            fillOpacity: 0,
+                            lineCap: "round",
+                            lineJoin: "round"
+                        };
+                    }
+                }
+            );
+    }
+
+
+    function removeRegionalDrainageRedJsonpScript_() {
+
+        if (
+            regionalDrainageRedJsonpScript
+        ) {
+            regionalDrainageRedJsonpScript.remove();
+            regionalDrainageRedJsonpScript = null;
+        }
+    }
+
+
+    function resetRegionalDrainageRedLayer_() {
+
+        removeRegionalDrainageRedJsonpScript_();
+
+        loadedRegionalDrainageRedDivision =
+            "";
+
+        if (regionalDrainageRedToggle) {
+            regionalDrainageRedToggle.checked =
+                false;
+        }
+
+        if (regionalDrainageRedLayer) {
+
+            if (
+                lineMap &&
+                lineMap.hasLayer(
+                    regionalDrainageRedLayer
+                )
+            ) {
+                lineMap.removeLayer(
+                    regionalDrainageRedLayer
+                );
+            }
+
+            regionalDrainageRedLayer.clearLayers();
+        }
+
+        setRegionalDrainageRedStatus_(
+            "未載入；此圖層僅供描繪參考，不會儲存至案件資料。",
+            ""
+        );
+    }
+
+
+    function loadRegionalDrainageRedLine_() {
+
+        const divisionId =
+            divisionSelect.value;
+
+        if (!divisionId) {
+
+            regionalDrainageRedToggle.checked =
+                false;
+
+            alert(
+                "請先從頁面上方選擇河川分署。"
+            );
+
+            return;
+        }
+
+        initializeRegionalDrainageRedLayer_();
+
+        if (
+            loadedRegionalDrainageRedDivision ===
+            divisionId
+        ) {
+
+            if (
+                regionalDrainageRedLayer &&
+                regionalDrainageRedLayer
+                    .getLayers()
+                    .length > 0
+            ) {
+                regionalDrainageRedLayer.addTo(
+                    lineMap
+                );
+
+                setRegionalDrainageRedStatus_(
+                    "中央管區域排水用地範圍線已顯示。",
+                    "success"
+                );
+            } else {
+                setRegionalDrainageRedStatus_(
+                    "本分署目前無中央管區域排水用地範圍線資料。",
+                    ""
+                );
+            }
+
+            return;
+        }
+
+        removeRegionalDrainageRedJsonpScript_();
+
+        regionalDrainageRedLayer.clearLayers();
+
+        loadedRegionalDrainageRedDivision =
+            "";
+
+        setRegionalDrainageRedStatus_(
+            "中央管區域排水用地範圍線載入中...",
+            "loading"
+        );
+
+        const script =
+            document.createElement(
+                "script"
+            );
+
+        regionalDrainageRedJsonpScript =
+            script;
+
+        script.src =
+            GAS_URL +
+            "?action=readRegionalDrainageRedLine" +
+            "&division=" +
+            encodeURIComponent(
+                divisionId
+            ) +
+            "&token=" +
+            encodeURIComponent(
+                getAuthToken()
+            ) +
+            "&callback=handleRegionalDrainageRedLineResponse" +
+            "&_t=" +
+            Date.now();
+
+        script.onerror =
+            function() {
+
+                removeRegionalDrainageRedJsonpScript_();
+
+                regionalDrainageRedToggle.checked =
+                    false;
+
+                setRegionalDrainageRedStatus_(
+                    "中央管區域排水用地範圍線載入失敗，請稍後再試。",
+                    "error"
+                );
+            };
+
+        document.body.appendChild(
+            script
+        );
+    }
+
+
+    function handleRegionalDrainageRedLineResponse(
+        response
+    ) {
+
+        removeRegionalDrainageRedJsonpScript_();
+
+        if (
+            handleAuthFailure(
+                response
+            )
+        ) {
+
+            regionalDrainageRedToggle.checked =
+                false;
+
+            if (
+                regionalDrainageRedLayer &&
+                lineMap &&
+                lineMap.hasLayer(
+                    regionalDrainageRedLayer
+                )
+            ) {
+                lineMap.removeLayer(
+                    regionalDrainageRedLayer
+                );
+            }
+
+            setRegionalDrainageRedStatus_(
+                "登入已失效，請重新登入後再載入中央管區域排水用地範圍線。",
+                "error"
+            );
+
+            return;
+        }
+
+        if (
+            !response ||
+            response.success !== true ||
+            !response.data
+        ) {
+
+            regionalDrainageRedToggle.checked =
+                false;
+
+            setRegionalDrainageRedStatus_(
+                response && response.message
+                    ? response.message
+                    : "中央管區域排水用地範圍線讀取失敗。",
+                "error"
+            );
+
+            return;
+        }
+
+        if (
+            String(response.division) !==
+            String(divisionSelect.value)
+        ) {
+            return;
+        }
+
+        initializeRegionalDrainageRedLayer_();
+
+        regionalDrainageRedLayer.clearLayers();
+
+        try {
+
+            regionalDrainageRedLayer.addData(
+                response.data
+            );
+
+        } catch (error) {
+
+            regionalDrainageRedToggle.checked =
+                false;
+
+            setRegionalDrainageRedStatus_(
+                "中央管區域排水用地範圍線 GeoJSON 無法顯示。",
+                "error"
+            );
+
+            console.error(
+                "中央管區域排水用地範圍線顯示失敗：",
+                error
+            );
+
+            return;
+        }
+
+        loadedRegionalDrainageRedDivision =
+            String(
+                response.division
+            );
+
+        const featureCount =
+            Number(
+                response.featureCount
+            ) || 0;
+
+        if (featureCount === 0) {
+
+            regionalDrainageRedToggle.checked =
+                false;
+
+            setRegionalDrainageRedStatus_(
+                "本分署目前無中央管區域排水用地範圍線資料。",
+                ""
+            );
+
+            return;
+        }
+
+        if (
+            regionalDrainageRedToggle.checked
+        ) {
+            regionalDrainageRedLayer.addTo(
+                lineMap
+            );
+        }
+
+        setRegionalDrainageRedStatus_(
+            "已載入 " +
+            featureCount +
+            " 筆中央管區域排水用地範圍線；僅供描繪參考。",
+            "success"
+        );
+    }
+
+
+    regionalDrainageRedToggle.addEventListener(
+        "change",
+        function() {
+
+            if (this.checked) {
+                loadRegionalDrainageRedLine_();
+                return;
+            }
+
+            if (
+                regionalDrainageRedLayer &&
+                lineMap &&
+                lineMap.hasLayer(
+                    regionalDrainageRedLayer
+                )
+            ) {
+                lineMap.removeLayer(
+                    regionalDrainageRedLayer
+                );
+            }
+
+            if (
+                loadedRegionalDrainageRedDivision
+            ) {
+                setRegionalDrainageRedStatus_(
+                    regionalDrainageRedLayer
+                        .getLayers()
+                        .length > 0
+                        ? "中央管區域排水用地範圍線已隱藏；再次勾選即可顯示。"
+                        : "本分署目前無中央管區域排水用地範圍線資料。",
+                    ""
+                );
+            } else {
+                setRegionalDrainageRedStatus_(
+                    "未載入；此圖層僅供描繪參考，不會儲存至案件資料。",
+                    ""
+                );
+            }
+        }
+    );
+
+
     /**
      * 第一次使用時建立 Leaflet.draw 編輯器。
      * 同一案件可以保留多條線，不再清除前一條。
@@ -3804,12 +4781,14 @@
 
         initializeRiverManagementLayer_();
         initializeRiverLandlineLayer_();
+        initializeRegionalDrainageGreenLayer_();
+        initializeRegionalDrainageRedLayer_();
 
         drawnItems = new L.FeatureGroup();
         lineMap.addLayer(drawnItems);
 
-        // 工具名稱：一般線形 + 封閉線形。
-        // 封閉線形在繪製時借用 Polygon 的「點回第一點完成」操作，
+        // 工具名稱：一般工程範圍線 + 封閉工程範圍線。
+        // 封閉工程範圍線在繪製時借用 Polygon 的「點回第一點完成」操作，
         // 完成後立即轉成 Closed LineString，因此後端、GeoJSON、SHP 都仍沿用線資料。
         if (
             L.drawLocal &&
@@ -3818,10 +4797,10 @@
             L.drawLocal.draw.toolbar.buttons
         ) {
             L.drawLocal.draw.toolbar.buttons.polyline =
-                "繪製一般工程線形";
+                "繪製一般工程範圍線";
 
             L.drawLocal.draw.toolbar.buttons.polygon =
-                "繪製封閉工程線形";
+                "繪製封閉工程範圍線";
         }
 
         if (
@@ -3832,22 +4811,37 @@
             L.drawLocal.draw.handlers.polygon.tooltip
         ) {
             L.drawLocal.draw.handlers.polygon.tooltip.start =
-                "點擊開始繪製封閉工程線形";
+                "點擊開始繪製封閉工程範圍線";
 
             L.drawLocal.draw.handlers.polygon.tooltip.cont =
-                "繼續點選工程線形節點";
+                "繼續點選工程範圍線節點";
 
             L.drawLocal.draw.handlers.polygon.tooltip.end =
-                "點擊最初的節點以封閉工程線形";
+                "點擊最初的節點以封閉工程範圍線";
         }
 
         const drawControl = new L.Control.Draw({
             draw: {
-                polyline: true,
+                polyline: {
+                    shapeOptions: {
+                        color: "#111111",
+                        weight: 4,
+                        opacity: 1,
+                        dashArray: "10 8",
+                        lineCap: "round",
+                        lineJoin: "round"
+                    }
+                },
                 polygon: {
                     allowIntersection: true,
                     showArea: false,
                     shapeOptions: {
+                        color: "#111111",
+                        weight: 4,
+                        opacity: 1,
+                        dashArray: "10 8",
+                        lineCap: "round",
+                        lineJoin: "round",
                         fill: false
                     }
                 },
@@ -3858,15 +4852,20 @@
             },
             edit: {
                 featureGroup: drawnItems,
-                edit: true,
+                edit: {
+                    selectedPathOptions: {
+                        maintainColor: true,
+                        dashArray: "10 8"
+                    }
+                },
                 remove: true
             }
         });
 
         lineMap.addControl(drawControl);
 
-        // 新增一段線形。
-        // 若使用「封閉工程線形」工具，Leaflet.draw 會先建立 Polygon；
+        // 新增一段工程範圍線。
+        // 若使用「封閉工程範圍線」工具，Leaflet.draw 會先建立 Polygon；
         // 此處將其外框轉為「第一點 = 最後一點」的 Closed LineString。
         lineMap.on(L.Draw.Event.CREATED, function(event) {
 
@@ -3899,20 +4898,27 @@
                         );
                     }
 
-                    layer = L.polyline(ring);
+                    layer = L.polyline(
+                        ring,
+                        ENGINEERING_RANGE_LINE_STYLE
+                    );
                 }
             }
+
+            applyEngineeringRangeLineStyle_(
+                layer
+            );
 
             drawnItems.addLayer(layer);
             updateLineInformation();
         });
 
-        // 編輯既有線形
+        // 編輯既有工程範圍線
         lineMap.on(L.Draw.Event.EDITED, function() {
             updateLineInformation();
         });
 
-        // 刪除其中一段線形
+        // 刪除其中一段工程範圍線
         lineMap.on(L.Draw.Event.DELETED, function() {
             updateLineInformation();
         });
@@ -3920,8 +4926,8 @@
 
 
     /**
-     * 開啟工程線形繪製視窗。
-     * 有既有線形時顯示全部線段，否則定位到目前河川分署附近。
+     * 開啟工程範圍繪製視窗。
+     * 有既有工程範圍線時顯示全部線段，否則定位到目前河川分署附近。
      */
     function openLineMap() {
 
@@ -3971,7 +4977,7 @@
         const summary = getLineSummary_();
 
         if (summary.lineCount === 0) {
-            alert("尚未完成有效的工程線形。");
+            alert("尚未完成有效的工程範圍。");
             return;
         }
 
@@ -4011,14 +5017,14 @@
 
         lineGeoJSONInput.value = JSON.stringify(geojson);
 
-        // 依工程線形自動產生代表座標點
+        // 依工程範圍自動產生代表座標點
         updateCoordinateFromLines();
 
-        // CRUD 修改案件時，告訴 Apps Script 線形已經被使用者修改。
+        // CRUD 修改案件時，告訴 Apps Script 工程範圍資料已被使用者修改。
         lineChangedInput.value = "1";
 
         lineStatus.textContent =
-            "✓ 已完成工程線形，" +
+            "✓ 已完成工程範圍繪製，共 " +
             summary.lineCount +
             " 段，" +
             summary.totalPoints +
@@ -4035,11 +5041,11 @@
 
 
     /**
-     * 使用者主動清除所有線形。
+     * 使用者主動清除所有工程範圍線。
      */
     function clearLine() {
 
-        if (!confirm("確定要清除目前工程線形嗎？")) {
+        if (!confirm("確定要清除目前工程範圍嗎？")) {
             return;
         }
 
@@ -4058,7 +5064,7 @@
         // 修改案件時，空白 GeoJSON + lineChanged=1 代表刪除原線形。
         lineChangedInput.value = "1";
 
-        lineStatus.textContent = "尚未繪製工程線形";
+        lineStatus.textContent = "尚未繪製工程範圍";
         clearLineButton.disabled = true;
 
         updateLineInformation();
@@ -4066,7 +5072,7 @@
 
 
     /**
-     * 僅重設前端狀態，不代表使用者真的修改線形。
+     * 僅重設前端狀態，不代表使用者真的修改工程範圍。
      * 用於切換新增案件、載入修改案件等情境。
      */
     function resetLineStateSilently() {
@@ -4081,7 +5087,7 @@
                 "coordinate"
             )
             .value = "";
-        lineStatus.textContent = "尚未繪製工程線形";
+        lineStatus.textContent = "尚未繪製工程範圍";
         clearLineButton.disabled = true;
 
         updateLineInformation();
@@ -4089,7 +5095,7 @@
 
 
     /**
-     * 載入已儲存的 GeoJSON 到線形編輯器。
+     * 載入已儲存的 GeoJSON 到工程範圍編輯器。
      * 同時相容舊的 LineString 與新的 MultiLineString。
      */
     function restoreLineFromGeoJSON(geojsonText) {
@@ -4128,7 +5134,12 @@
                     return [coord[1], coord[0]];
                 });
 
-                drawnItems.addLayer(L.polyline(latlngs));
+                drawnItems.addLayer(
+                    L.polyline(
+                        latlngs,
+                        ENGINEERING_RANGE_LINE_STYLE
+                    )
+                );
             };
 
             if (geometry.type === "LineString") {
@@ -4164,13 +5175,13 @@
             updateCoordinateFromLines();
 
             lineStatus.textContent =
-                "✓ 已載入原工程線形，" +
+                "✓ 已載入原工程範圍，共 " +
                 summary.lineCount +
                 " 段，" +
                 summary.totalPoints +
                 " 個節點，概略總長度 " +
                 formatLineLength(summary.totalLength) +
-                "；可按「繪製工程線形」進行修改。";
+                "；可按「繪製工程範圍」進行修改。";
 
             clearLineButton.disabled = false;
 
@@ -5869,7 +6880,7 @@
 
 
             if (lines.length === 0) {
-                alert("目前尚無工程線形代表座標。");
+                alert("目前尚無工程範圍代表座標。");
                 return;
             }
 
@@ -6715,7 +7726,7 @@
             return;
         }
 
-        // 編輯資料載入只是讀取，不算使用者修改線形。
+        // 編輯資料載入只是讀取，不算使用者修改工程範圍。
         lineChangedInput.value = "0";
 
         if (
@@ -6775,7 +7786,7 @@
                 "確定要刪除「" +
                 caseName +
                 "」嗎？\n\n" +
-                "案件會從正式附表與線形資料中移除，但系統會先備份到 Google Sheet 的「刪除紀錄」工作表。"
+                "案件會從正式附表與工程範圍資料中移除，但系統會先備份到 Google Sheet 的「刪除紀錄」工作表。"
             );
 
         if (!ok) {
@@ -6836,17 +7847,17 @@
 
         { id: "ecologyCheck", label: "是否辦理核定階段生態檢核" },
 
-        // 由工程線形自動產生
-        { id: "coordinate", label: "工程線形代表座標點位" },
+        // 由工程範圍自動產生
+        { id: "coordinate", label: "工程範圍代表座標點位" },
 
 
 
         // 為避免大幅改動既有後端參數名稱，
         // 這三個 input id 仍沿用 budget116 / 117 / 118，
-        // 但畫面與 Excel 對應為 115 / 116 / 117 年。
-        { id: "budget116", label: "115年預估使用經費" },
-        { id: "budget117", label: "116年預估使用經費" },
-        { id: "budget118", label: "117年預估使用經費" },
+        // 但畫面與 Excel 對應為 116 / 117 / 118 年。
+        { id: "budget116", label: "116年預估使用經費" },
+        { id: "budget117", label: "117年預估使用經費" },
+        { id: "budget118", label: "118年預估使用經費" },
 
         { id: "totalFunding", label: "經費需求" }
 
@@ -7503,9 +8514,9 @@
             '<th rowspan="2">預估用地取得經費(千元)<br>(僅類別屬用地先期需填列)</th>';
 
         const commonBudgetHeaders =
-            '<th>115年<br>(A)</th>' +
-            '<th>116年<br>(B)</th>' +
-            '<th>117年<br>(C)</th>';
+            '<th>116年<br>(A)</th>' +
+            '<th>117年<br>(B)</th>' +
+            '<th>118年<br>(C)</th>';
 
 
         if (
@@ -7742,7 +8753,7 @@ function createBusinessCaseNameCell(
             "view-line-button";
 
         lineButton.textContent =
-            "🔎 查看線形";
+            "🔎 查看工程範圍";
 
         lineButton.addEventListener(
             "click",
@@ -8381,7 +9392,7 @@ function renderBusinessDataRows(
                 </div>
 
                 <div class="dashboard-card">
-                    <div class="dashboard-card-label">115年度預估使用經費</div>
+                    <div class="dashboard-card-label">116年度預估使用經費</div>
                     <div class="dashboard-card-value">
                         ${formatDashboardNumber(budgetA)}
                         <span class="dashboard-card-unit">千元</span>
@@ -9827,7 +10838,7 @@ function handleBusinessData(
 
 
     /**
-     * 讀取目前所選河川分署的全部工程線形。
+     * 讀取目前所選河川分署的全部工程範圍資料。
      * 使用 Apps Script 的 action=readLines，一次取得，不逐案發送請求。
      */
     function readOverviewLinesForAllView(
@@ -9992,7 +11003,7 @@ function handleBusinessData(
 
         overviewLineMapStatus.textContent =
             selectedDivision +
-            "全部附表工程線形載入中...";
+            "全部附表工程範圍載入中...";
 
         if (overviewLineGroup) {
             overviewLineGroup.clearLayers();
@@ -10022,7 +11033,7 @@ function handleBusinessData(
                         ) {
                             overviewLineMapStatus.textContent =
                                 selectedDivision +
-                                "全部附表工程線形載入中...（" +
+                                "全部附表工程範圍載入中...（" +
                                 completedCount +
                                 "/" +
                                 appendixTypes.length +
@@ -10087,7 +11098,7 @@ function handleBusinessData(
             return;
         }
 
-        // 切到單一附表時，讓舊的全部附表線形請求失效。
+        // 切到單一附表時，讓舊的全部附表工程範圍請求失效。
         overviewLinesLoadGeneration++;
 
         const divisionId =
@@ -10131,7 +11142,7 @@ function handleBusinessData(
                     selectedAppendixType
                 ] || "附表1"
             ) +
-            "工程線形載入中...";
+            "工程範圍載入中...";
 
 
         if (overviewLineGroup) {
@@ -10316,7 +11327,7 @@ function handleBusinessData(
 
 
     /**
-     * 接收目前分署全部線形並一次畫在右側地圖。
+     * 接收目前分署全部工程範圍並一次畫在右側地圖。
      */
     function handleOverviewLineData(response) {
         if (
@@ -10349,8 +11360,8 @@ function handleBusinessData(
             response.data : [];
 
         // 提報工程位置必須跟目前「查看附表」一致：
-        // - 單一附表：只顯示該附表的工程線形。
-        // - 全部附表：才顯示本分署所有適用附表的工程線形。
+        // - 單一附表：只顯示該附表的工程範圍。
+        // - 全部附表：才顯示本分署所有適用附表的工程範圍。
         const currentAppendixType =
             getCurrentBusinessAppendixType();
 
@@ -10421,7 +11432,12 @@ function handleBusinessData(
 
                     const layer =
                         L.geoJSON(
-                            geojson
+                            geojson,
+                            {
+                                style: function() {
+                                    return ENGINEERING_RANGE_LINE_STYLE;
+                                }
+                            }
                         );
 
 
@@ -10582,7 +11598,7 @@ function handleBusinessData(
 
             overviewLineMapStatus.textContent =
                 currentOverviewLabel +
-                "目前尚無工程線形資料";
+                "目前尚無工程範圍資料";
 
             return;
         }
@@ -10594,12 +11610,12 @@ function handleBusinessData(
             caseCount +
             " 件工程、共 " +
             lineCount +
-            " 段工程線形。";
+            " 段工程範圍線。";
     }
 
 
     // =====================================================
-    // 提報內容：查看工程線形（只讀）
+    // 提報內容：查看工程範圍（只讀）
     // =====================================================
 
     const viewLineModal =
@@ -10659,7 +11675,7 @@ function openViewLineMap(
             caseData.caseName ||
             "未命名案件"
         ) +
-        "－工程線形";
+        "－工程範圍";
 
     let locationParts = [
         caseData.division,
@@ -10721,7 +11737,7 @@ function openViewLineMap(
             .join("｜");
 
     viewLineStatus.textContent =
-        "線形資料載入中...";
+        "工程範圍資料載入中...";
 
     // 先移除上一個案件的線形，避免載入失敗時仍看到舊線。
     if (viewLineLayer) {
@@ -10865,7 +11881,7 @@ function openViewLineMap(
         function() {
 
             viewLineStatus.textContent =
-                "線形資料讀取失敗，請確認網路。";
+                "工程範圍資料讀取失敗，請確認網路。";
 
         };
 
@@ -10890,7 +11906,7 @@ function openViewLineMap(
             viewLineStatus.textContent =
                 response && response.message ?
                 response.message :
-                "此案件尚未繪製工程線形";
+                "此案件尚未繪製工程範圍";
             return;
         }
 
@@ -10902,13 +11918,22 @@ function openViewLineMap(
                 JSON.parse(response.data.geojson) :
                 response.data.geojson;
         } catch (error) {
-            viewLineStatus.textContent = "工程線形 GeoJSON 格式錯誤。";
+            viewLineStatus.textContent = "工程範圍資料格式錯誤。";
             return;
         }
 
         try {
 
-            viewLineLayer = L.geoJSON(geojson).addTo(viewLineMap);
+            viewLineLayer =
+                L.geoJSON(
+                    geojson,
+                    {
+                        style: function() {
+                            return ENGINEERING_RANGE_LINE_STYLE;
+                        }
+                    }
+                )
+                .addTo(viewLineMap);
 
             const bounds = viewLineLayer.getBounds();
 
@@ -10950,7 +11975,7 @@ function openViewLineMap(
             });
 
             viewLineStatus.textContent =
-                "✓ 工程線形已載入｜線形數：" +
+                "✓ 工程範圍已載入｜範圍線數：" +
                 lineCount +
                 " 段｜節點數：" +
                 totalPoints +
@@ -10959,7 +11984,7 @@ function openViewLineMap(
 
         } catch (error) {
             viewLineStatus.textContent =
-                "工程線形顯示失敗：" +
+                "工程範圍顯示失敗：" +
                 error.message;
         }
     }
@@ -12246,9 +13271,9 @@ function openViewLineMap(
 
 
         // -----------------------------------
-        // 工程線形另外檢查
+        // 工程範圍另外檢查
         // 附表1、附表2都需要代表座標，
-        // 目前均由工程線形自動產生。
+        // 目前均由工程範圍自動產生。
         // -----------------------------------
         const lineGeoJSON =
             String(
@@ -12258,7 +13283,7 @@ function openViewLineMap(
         if (lineGeoJSON === "") {
 
             missingFields.push(
-                "工程線形"
+                "工程範圍繪製"
             );
 
             lineStatus.classList.add(
@@ -12641,7 +13666,7 @@ function openViewLineMap(
 
     /**
      * 附表1～附表5共用儀表板。
-     * 年度欄位依使用者提供的 Excel 顯示為 115／116／117 年。
+     * 年度欄位依使用者提供的 Excel 顯示為 116／117／118 年。
      */
     function renderGenericAppendixDashboard(
         rows,
@@ -12834,7 +13859,7 @@ function openViewLineMap(
 
                 <div class="dashboard-card">
                     <div class="dashboard-card-label">
-                        115年度預估使用經費
+                        116年度預估使用經費
                     </div>
                     <div class="dashboard-card-value">
                         ${formatDashboardNumber(budgetA)}
@@ -14355,10 +15380,6 @@ if (loginHint) {
                     </div>
                 </div>
 
-                <div class="river-coast-budget-note">
-                    ※ 本頁只開放填列「出流管制審查」及「水利建造物複查、縣市政府評鑑」兩欄。<br>
-                </div>
-
                 <form
                     id="riverCoastBudgetForm"
                     method="POST"
@@ -15578,9 +16599,6 @@ function initializeRiverCoastReviewModule() {
             <div class="river-coast-review-heading">
                 <div>
                     <h2>附表1～附表5－案件審查核定</h2>
-                    <div class="river-coast-review-meta">
-                        河川海岸組填列「河海組初擬結論」
-                    </div>
                 </div>
             </div>
 
@@ -15671,7 +16689,7 @@ function initializeRiverCoastReviewModule() {
                             <tr>
                                 <th>意見</th>
                                 <th>核定經費<br>(千元)</th>
-                                <th>115年度可支用經費<br>(千元)</th>
+                                <th>116年度可支用經費<br>(千元)</th>
                                 <th>預估跨以後年度預算數<br>(千元)</th>
                                 <th>容許碳排量<br>(tCO2e)</th>
                             </tr>
@@ -15795,7 +16813,7 @@ function initializeRiverCoastReviewModule() {
 
 
                 // 儲存前先檢查金額邏輯。
-                // 115年度可支用經費 > 核定經費時，
+                // 116年度可支用經費 > 核定經費時，
                 // 直接阻擋送出，不會寫入 Google Sheet。
                 if (
                     !validateRiverCoastReviewAmountsBeforeSave_(
@@ -16169,7 +17187,7 @@ function calculateRiverCoastReviewFutureBudgetDisplay_(
     }
 
 
-    // 若 115 年可支用經費大於核定經費，
+    // 若 116 年可支用經費大於核定經費，
     // 先於畫面提示，後端儲存時也會阻擋。
     if (
         annualBudget >
@@ -16273,7 +17291,7 @@ function createRiverCoastReviewFutureBudgetInput_(
         );
 
     element.title =
-        "系統自動計算：核定經費－115年度可支用經費";
+        "系統自動計算：核定經費－116年度可支用經費";
 
     return element;
 }
@@ -17529,7 +18547,7 @@ function validateRiverCoastReviewAmountsBeforeSave_(
                 "error";
 
             status.textContent =
-                "無法儲存：115年度可支用經費不得大於核定經費，請先修正紅框欄位。";
+                "無法儲存：116年度可支用經費不得大於核定經費，請先修正紅框欄位。";
         }
 
 
@@ -17927,6 +18945,362 @@ clearAuthToken = function() {
 
 
 
+
+// =====================================================
+// 表4－各河川分署生態檢核案件明細：分署填報 / 管理者補登
+// =====================================================
+let table4EcologySaving = false;
+let table4EcologyLoadedDivisionId = "";
+let table4EcologyDirty = false;
+let adminTable4Saving = false;
+const adminTable4DirtyFields = new Set();
+
+function table4EcologyValue_(value) {
+    return value === undefined || value === null ? "" : String(value);
+}
+
+function table4EcologyBudgetText_(value) {
+    return value === undefined || value === null || value === "" ? "" : String(value);
+}
+
+function table4EcologyValidateBudgets_(annualValue, usableValue, statusElement) {
+    const annualText = String(annualValue === undefined || annualValue === null ? "" : annualValue).trim();
+    const usableText = String(usableValue === undefined || usableValue === null ? "" : usableValue).trim();
+    if (annualText !== "") {
+        const annual = Number(annualText);
+        if (!Number.isFinite(annual) || annual < 0) {
+            if (statusElement) {
+                statusElement.className = "error";
+                statusElement.textContent = "116年度經費必須為0以上的數字。";
+            }
+            return false;
+        }
+    }
+    if (usableText !== "") {
+        const usable = Number(usableText);
+        if (!Number.isFinite(usable) || usable < 0) {
+            if (statusElement) {
+                statusElement.className = "error";
+                statusElement.textContent = "116年度預估可支用經費必須為0以上的數字。";
+            }
+            return false;
+        }
+    }
+    if (annualText !== "" && usableText !== "" && Number(usableText) > Number(annualText)) {
+        if (statusElement) {
+            statusElement.className = "error";
+            statusElement.textContent = "116年度預估可支用經費不得大於116年度經費。";
+        }
+        return false;
+    }
+    return true;
+}
+
+function syncTable4EcologyAccess_(role, divisionId) {
+    const tab = document.getElementById("table4EcologyMainTab");
+    const page = document.getElementById("table4EcologyPage");
+    const allowed = role === "division";
+    if (tab) {
+        tab.style.display = allowed ? "" : "none";
+    }
+    if (!allowed && page) {
+        page.classList.remove("active");
+    }
+    if (!allowed) {
+        table4EcologyLoadedDivisionId = "";
+        table4EcologyDirty = false;
+        return;
+    }
+    if (String(divisionId || "") !== table4EcologyLoadedDivisionId) {
+        table4EcologyLoadedDivisionId = "";
+        table4EcologyDirty = false;
+    }
+}
+
+function renderTable4EcologyRecord_(record) {
+    const body = document.getElementById("table4EcologyBody");
+    if (!body) return;
+    if (!record) {
+        body.innerHTML = '<tr><td colspan="5" class="table4-ecology-empty">目前沒有可填報的表4資料</td></tr>';
+        return;
+    }
+    body.innerHTML = `
+        <tr>
+            <td>${escapeAdminBudgetHtml(record.divisionName || "")}</td>
+            <td><input type="text" id="table4EcologyPlanName" class="table4-ecology-input table4-ecology-plan-input"></td>
+            <td><input type="number" min="0" step="any" id="table4EcologyAnnualBudget" class="table4-ecology-input table4-ecology-number-input"></td>
+            <td><input type="number" min="0" step="any" id="table4EcologyUsableBudget" class="table4-ecology-input table4-ecology-number-input"></td>
+            <td><input type="text" id="table4EcologyProjectNumber" class="table4-ecology-input table4-ecology-project-input"></td>
+        </tr>`;
+    document.getElementById("table4EcologyPlanName").value = table4EcologyValue_(record.planName);
+    document.getElementById("table4EcologyAnnualBudget").value = table4EcologyBudgetText_(record.annualBudget);
+    document.getElementById("table4EcologyUsableBudget").value = table4EcologyBudgetText_(record.usableBudget);
+    document.getElementById("table4EcologyProjectNumber").value = table4EcologyValue_(record.projectNumber);
+
+    body.querySelectorAll(".table4-ecology-input").forEach(function(input) {
+        input.addEventListener("input", function() {
+            table4EcologyDirty = true;
+            this.classList.add("dirty");
+            const status = document.getElementById("table4EcologyStatus");
+            if (status) {
+                status.className = "";
+                status.textContent = "尚有未儲存的修改。";
+            }
+        });
+    });
+
+    const scope = document.getElementById("table4EcologyScopeLabel");
+    const updated = document.getElementById("table4EcologyLastUpdated");
+    if (scope) scope.textContent = record.divisionName || "";
+    if (updated) updated.textContent = record.updatedAt ? "　最後儲存：" + record.updatedAt : "　目前尚無填報紀錄";
+    table4EcologyDirty = false;
+}
+
+function loadTable4EcologyData_(forceReload) {
+    if (currentAuthRole !== "division") return;
+    const divisionId = String(currentAuthDivisionId || "");
+    if (!divisionId) return;
+    if (!forceReload && table4EcologyLoadedDivisionId === divisionId) return;
+    const status = document.getElementById("table4EcologyStatus");
+    if (status) {
+        status.className = "";
+        status.textContent = "資料載入中...";
+    }
+    const old = document.getElementById("table4EcologyJsonp");
+    if (old) old.remove();
+    const script = document.createElement("script");
+    script.id = "table4EcologyJsonp";
+    script.src = GAS_URL +
+        "?action=readTable4Ecology" +
+        "&token=" + encodeURIComponent(getAuthToken()) +
+        "&divisionId=" + encodeURIComponent(divisionId) +
+        "&callback=handleTable4EcologyResponse" +
+        "&_=" + Date.now();
+    script.onerror = function() {
+        if (status) {
+            status.className = "error";
+            status.textContent = "表4資料讀取失敗，請稍後再試。";
+        }
+    };
+    document.body.appendChild(script);
+}
+
+function handleTable4EcologyResponse(response) {
+    if (handleAuthFailure(response)) return;
+    const status = document.getElementById("table4EcologyStatus");
+    if (!response || response.success !== true) {
+        if (status) {
+            status.className = "error";
+            status.textContent = response && response.message ? response.message : "表4資料讀取失敗。";
+        }
+        return;
+    }
+    const records = Array.isArray(response.records) ? response.records : [];
+    const record = records.length ? records[0] : null;
+    renderTable4EcologyRecord_(record);
+    table4EcologyLoadedDivisionId = record ? String(record.divisionId || currentAuthDivisionId || "") : String(currentAuthDivisionId || "");
+    if (status) {
+        status.className = "";
+        status.textContent = "";
+    }
+}
+
+const table4EcologyMainTab = document.getElementById("table4EcologyMainTab");
+if (table4EcologyMainTab) {
+    table4EcologyMainTab.addEventListener("click", function() {
+        loadTable4EcologyData_(false);
+    });
+}
+
+const table4EcologyForm = document.getElementById("table4EcologyForm");
+if (table4EcologyForm) {
+    table4EcologyForm.action = GAS_URL;
+    table4EcologyForm.addEventListener("submit", function(event) {
+        if (currentAuthRole !== "division") {
+            event.preventDefault();
+            return;
+        }
+        const status = document.getElementById("table4EcologyStatus");
+        const plan = document.getElementById("table4EcologyPlanName");
+        const annual = document.getElementById("table4EcologyAnnualBudget");
+        const usable = document.getElementById("table4EcologyUsableBudget");
+        const project = document.getElementById("table4EcologyProjectNumber");
+        if (!plan || !annual || !usable || !project) {
+            event.preventDefault();
+            return;
+        }
+        if (!table4EcologyValidateBudgets_(annual.value, usable.value, status)) {
+            event.preventDefault();
+            return;
+        }
+        document.getElementById("table4EcologyToken").value = getAuthToken();
+        document.getElementById("table4EcologyRecordsJson").value = JSON.stringify([{
+            divisionId: String(currentAuthDivisionId || ""),
+            planName: plan.value,
+            annualBudget: annual.value,
+            usableBudget: usable.value,
+            projectNumber: project.value
+        }]);
+        table4EcologySaving = true;
+        const saveButton = document.getElementById("table4EcologySaveButton");
+        if (saveButton) saveButton.disabled = true;
+        if (status) {
+            status.className = "";
+            status.textContent = "資料儲存中...";
+        }
+    });
+}
+
+const table4EcologyFrame = document.getElementById("table4EcologyFrame");
+if (table4EcologyFrame) {
+    table4EcologyFrame.addEventListener("load", function() {
+        if (!table4EcologySaving) return;
+        table4EcologySaving = false;
+        table4EcologyDirty = false;
+        table4EcologyLoadedDivisionId = "";
+        const saveButton = document.getElementById("table4EcologySaveButton");
+        const status = document.getElementById("table4EcologyStatus");
+        if (saveButton) saveButton.disabled = false;
+        if (status) {
+            status.className = "success";
+            status.textContent = "✓ 表4資料已送出，正在重新載入最新資料...";
+        }
+        setTimeout(function() { loadTable4EcologyData_(true); }, 500);
+    });
+}
+
+const table4EcologyReloadButton = document.getElementById("table4EcologyReloadButton");
+if (table4EcologyReloadButton) {
+    table4EcologyReloadButton.addEventListener("click", function() {
+        if (table4EcologyDirty && !window.confirm("目前有尚未儲存的表4修改，確定要重新載入並放棄修改嗎？")) return;
+        table4EcologyDirty = false;
+        table4EcologyLoadedDivisionId = "";
+        loadTable4EcologyData_(true);
+    });
+}
+
+function renderAdminTable4Ecology_(table4) {
+    const body = document.getElementById("adminTable4EcologyBody");
+    const records = table4 && Array.isArray(table4.records) ? table4.records : [];
+    const completed = document.getElementById("adminTable4CompletedCount");
+    const summaryTotal = document.getElementById("adminTable4AnnualBudgetTotal");
+    const annualFoot = document.getElementById("adminTable4AnnualBudgetFootTotal");
+    const usableFoot = document.getElementById("adminTable4UsableBudgetFootTotal");
+    if (completed) completed.textContent = String(table4 && table4.completedCount || 0) + " / " + String(table4 && table4.totalCount || records.length || 0);
+    if (summaryTotal) summaryTotal.textContent = formatAdminBudgetNumber(table4 && table4.annualBudgetTotal || 0);
+    if (annualFoot) annualFoot.textContent = formatAdminBudgetNumber(table4 && table4.annualBudgetTotal || 0);
+    if (usableFoot) usableFoot.textContent = formatAdminBudgetNumber(table4 && table4.usableBudgetTotal || 0);
+    if (!body) return;
+    if (!records.length) {
+        body.innerHTML = '<tr><td colspan="7" class="admin-budget-empty">目前沒有表4填報資料</td></tr>';
+        return;
+    }
+    body.innerHTML = records.map(function(record) {
+        const statusClass = record.fillStatus === "已填報" ? "complete" : (record.fillStatus === "部分填報" ? "partial" : "pending");
+        const divisionId = escapeAdminBudgetHtml(record.divisionId || "");
+        return '<tr data-table4-division-id="' + divisionId + '">' +
+            '<td class="admin-budget-name-cell">' + escapeAdminBudgetHtml(record.divisionName || "") + '</td>' +
+            '<td><input type="text" class="admin-table4-input admin-table4-plan-input" data-division-id="' + divisionId + '" data-field="planName" value="' + escapeAdminBudgetHtml(record.planName || "") + '"></td>' +
+            '<td><input type="number" min="0" step="any" class="admin-table4-input admin-table4-number-input" data-division-id="' + divisionId + '" data-field="annualBudget" value="' + escapeAdminBudgetHtml(table4EcologyBudgetText_(record.annualBudget)) + '"></td>' +
+            '<td><input type="number" min="0" step="any" class="admin-table4-input admin-table4-number-input" data-division-id="' + divisionId + '" data-field="usableBudget" value="' + escapeAdminBudgetHtml(table4EcologyBudgetText_(record.usableBudget)) + '"></td>' +
+            '<td><input type="text" class="admin-table4-input admin-table4-project-input" data-division-id="' + divisionId + '" data-field="projectNumber" value="' + escapeAdminBudgetHtml(record.projectNumber || "") + '"></td>' +
+            '<td><span class="admin-budget-status-badge ' + statusClass + '">' + escapeAdminBudgetHtml(record.fillStatus || "尚未填報") + '</span></td>' +
+            '<td class="admin-budget-date-cell">' + escapeAdminBudgetHtml(record.updatedAt || "—") + '</td>' +
+            '</tr>';
+    }).join("");
+
+    body.querySelectorAll(".admin-table4-input").forEach(function(input) {
+        input.addEventListener("input", function() {
+            const key = String(this.dataset.divisionId || "") + "|" + String(this.dataset.field || "");
+            adminTable4DirtyFields.add(key);
+            this.classList.add("dirty");
+            const status = document.getElementById("adminTable4SaveStatus");
+            if (status) {
+                status.className = "";
+                status.textContent = "尚有未儲存的表4修改。";
+            }
+        });
+    });
+    adminTable4DirtyFields.clear();
+}
+
+function collectAdminTable4ChangedRecords_() {
+    const recordsByDivision = {};
+    adminTable4DirtyFields.forEach(function(key) {
+        const parts = key.split("|");
+        const divisionId = parts[0];
+        const field = parts[1];
+        const input = document.querySelector('.admin-table4-input[data-division-id="' + divisionId + '"][data-field="' + field + '"]');
+        if (!input) return;
+        if (!recordsByDivision[divisionId]) recordsByDivision[divisionId] = { divisionId: divisionId };
+        recordsByDivision[divisionId][field] = input.value;
+    });
+    return Object.keys(recordsByDivision).map(function(divisionId) { return recordsByDivision[divisionId]; });
+}
+
+function validateAdminTable4Rows_(records) {
+    const status = document.getElementById("adminTable4SaveStatus");
+    const touched = new Set((records || []).map(function(record) { return String(record.divisionId || ""); }));
+    for (const divisionId of touched) {
+        const annual = document.querySelector('.admin-table4-input[data-division-id="' + divisionId + '"][data-field="annualBudget"]');
+        const usable = document.querySelector('.admin-table4-input[data-division-id="' + divisionId + '"][data-field="usableBudget"]');
+        if (annual && usable && !table4EcologyValidateBudgets_(annual.value, usable.value, status)) return false;
+    }
+    return true;
+}
+
+const adminTable4EcologyForm = document.getElementById("adminTable4EcologyForm");
+if (adminTable4EcologyForm) {
+    adminTable4EcologyForm.action = GAS_URL;
+    adminTable4EcologyForm.addEventListener("submit", function(event) {
+        if (currentAuthRole !== "admin") {
+            event.preventDefault();
+            return;
+        }
+        const records = collectAdminTable4ChangedRecords_();
+        const status = document.getElementById("adminTable4SaveStatus");
+        if (!records.length) {
+            event.preventDefault();
+            if (status) {
+                status.className = "";
+                status.textContent = "目前沒有尚未儲存的表4修改。";
+            }
+            return;
+        }
+        if (!validateAdminTable4Rows_(records)) {
+            event.preventDefault();
+            return;
+        }
+        document.getElementById("adminTable4EcologyToken").value = getAuthToken();
+        document.getElementById("adminTable4EcologyRecordsJson").value = JSON.stringify(records);
+        adminTable4Saving = true;
+        const button = document.getElementById("adminTable4SaveButton");
+        if (button) button.disabled = true;
+        if (status) {
+            status.className = "";
+            status.textContent = "表4資料儲存中...";
+        }
+    });
+}
+
+const adminTable4EcologyFrame = document.getElementById("adminTable4EcologyFrame");
+if (adminTable4EcologyFrame) {
+    adminTable4EcologyFrame.addEventListener("load", function() {
+        if (!adminTable4Saving) return;
+        adminTable4Saving = false;
+        adminTable4DirtyFields.clear();
+        const button = document.getElementById("adminTable4SaveButton");
+        const status = document.getElementById("adminTable4SaveStatus");
+        if (button) button.disabled = false;
+        if (status) {
+            status.className = "success";
+            status.textContent = "✓ 表4修改已送出，正在重新載入最新資料...";
+        }
+        adminBudgetOverviewLoaded = false;
+        setTimeout(function() { loadAdminBudgetOverviewData(true); }, 500);
+    });
+}
+
 // =====================================================
 // 管理者：經費填報總覽（唯讀）
 // =====================================================
@@ -18203,6 +19577,8 @@ function renderAdminBudgetOverview(response) {
     if (grandTotalElement) {
         grandTotalElement.textContent = formatAdminBudgetNumber(outflowTotal + structureTotal);
     }
+
+    renderAdminTable4Ecology_(response.table4 || {});
 }
 
 function handleAdminBudgetOverviewResponse(response) {
@@ -18298,6 +19674,13 @@ if (refreshAdminBudgetOverviewButton) {
     refreshAdminBudgetOverviewButton.addEventListener(
         "click",
         function() {
+            if (
+                adminTable4DirtyFields.size > 0 &&
+                !window.confirm("表4尚有未儲存的修改，確定要重新載入並放棄修改嗎？")
+            ) {
+                return;
+            }
+            adminTable4DirtyFields.clear();
             adminBudgetOverviewLoaded = false;
             loadAdminBudgetOverviewData(true);
         }
@@ -18324,6 +19707,8 @@ document
                 document.getElementById("adminOfficeBudgetSection");
             const riverSection =
                 document.getElementById("adminRiverCoastBudgetSection");
+            const table4Section =
+                document.getElementById("adminTable4EcologySection");
 
             if (table1Section) {
                 table1Section.classList.toggle(
@@ -18341,6 +19726,12 @@ document
                 riverSection.classList.toggle(
                     "active",
                     target === "riverCoast"
+                );
+            }
+            if (table4Section) {
+                table4Section.classList.toggle(
+                    "active",
+                    target === "table4"
                 );
             }
         });
@@ -22302,7 +23693,7 @@ function syncAdminRoleSwitchBar_() {
         ) {
 
             status.textContent =
-                "目前：管理者／河川分署功能。可使用上方河川分署選單切換各分署。";
+                "目前：管理者／河川分署功能";
 
         } else if (
             adminRoleSwitchValue ===
@@ -22310,7 +23701,7 @@ function syncAdminRoleSwitchBar_() {
         ) {
 
             status.textContent =
-                "目前模擬：河川海岸組。可使用表3填報及案件審查核定功能。";
+                "目前權限：河川海岸組。可使用表3填報及案件審查核定功能。";
 
         } else {
 
@@ -22325,7 +23716,7 @@ function syncAdminRoleSwitchBar_() {
 
             status.textContent =
                 officeName
-                    ? "目前模擬：" +
+                    ? "目前權限：" +
                       officeName +
                       "。可直接使用該組室的表2填報功能。"
                     : "管理者可直接切換並使用各組室功能。";
@@ -22434,6 +23825,11 @@ applyAuthScope = function(
     );
 
 
+    syncTable4EcologyAccess_(
+        role,
+        divisionId
+    );
+
     syncAdminRoleSwitchBar_();
 };
 
@@ -22478,12 +23874,17 @@ if (adminRoleSwitchSelect) {
                 (
                     riverCoastReviewDirtyFields &&
                     riverCoastReviewDirtyFields.size > 0
+                ) ||
+                table4EcologyDirty ||
+                (
+                    adminTable4DirtyFields &&
+                    adminTable4DirtyFields.size > 0
                 )
             ) {
 
                 const ok =
                     window.confirm(
-                        "目前河川海岸組畫面尚有未儲存的修改，確定要切換功能嗎？"
+                        "目前畫面尚有未儲存的修改，確定要切換功能嗎？"
                     );
 
                 if (!ok) {
@@ -23020,11 +24421,93 @@ function renderTable1BudgetFields_(
     }
 
 
+    // 表1顯示時先依「經費控管組室」合併分組。
+    // 後端仍維持 Excel 原始列順序與 itemKey，不更動任何儲存邏輯。
+    // 例如河一科原本分散在 E3、E8、E19，畫面上會集中成單一「河一科」區塊。
+    const table1ControlUnitOrder =
+        Object.create(null);
+
+    let table1NextUnitOrder = 0;
+
+
+    records.forEach(
+        function(record) {
+
+            const controlUnit =
+                String(
+                    record.controlUnit || ""
+                );
+
+            if (
+                !Object.prototype.hasOwnProperty.call(
+                    table1ControlUnitOrder,
+                    controlUnit
+                )
+            ) {
+                table1ControlUnitOrder[
+                    controlUnit
+                ] =
+                    table1NextUnitOrder++;
+            }
+        }
+    );
+
+
+    const orderedRecords =
+        records
+            .map(
+                function(record, index) {
+                    return {
+                        record: record,
+                        originalIndex: index
+                    };
+                }
+            )
+            .sort(
+                function(a, b) {
+
+                    const unitA =
+                        String(
+                            a.record.controlUnit ||
+                            ""
+                        );
+
+                    const unitB =
+                        String(
+                            b.record.controlUnit ||
+                            ""
+                        );
+
+                    const unitDifference =
+                        table1ControlUnitOrder[
+                            unitA
+                        ] -
+                        table1ControlUnitOrder[
+                            unitB
+                        ];
+
+                    if (unitDifference !== 0) {
+                        return unitDifference;
+                    }
+
+                    return (
+                        a.originalIndex -
+                        b.originalIndex
+                    );
+                }
+            )
+            .map(
+                function(item) {
+                    return item.record;
+                }
+            );
+
+
     let currentUnit = "";
     let section = null;
 
 
-    records.forEach(
+    orderedRecords.forEach(
         function(record) {
 
             const controlUnit =
@@ -23057,7 +24540,7 @@ function renderTable1BudgetFields_(
                     <div class="table1-budget-table">
                         <div class="table1-budget-table-head">
                             <div>工作內容</div>
-                            <div>115年度支用經費<br>(千元)</div>
+                            <div>116年度支用經費<br>(千元)</div>
                             <div>填報狀態</div>
                             <div>最後更新</div>
                         </div>
