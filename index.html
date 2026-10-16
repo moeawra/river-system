@@ -908,6 +908,66 @@
     display: none;
 }
 
+
+.admin-second-factor-gate {
+    position: fixed;
+    inset: 0;
+    z-index: 51000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(10, 30, 45, .45);
+    backdrop-filter: blur(2px);
+}
+.admin-second-factor-gate.hidden { display: none; }
+.admin-second-factor-card {
+    width: min(390px, calc(100vw - 40px));
+    background: #fff;
+    padding: 28px 30px;
+    border-radius: 8px;
+    box-shadow: 0 12px 40px rgba(0,0,0,.22);
+    text-align: center;
+}
+.admin-second-factor-card h3 { margin: 0 0 10px; color: #123d52; }
+.admin-second-factor-card p { margin: 0 0 16px; color: #4f616a; line-height: 1.6; }
+#adminSecondFactorPassword {
+    width: 100%; padding: 12px; margin-bottom: 10px;
+    border: 1px solid #9fb0ba; border-radius: 4px;
+    font-size: 18px; text-align: center; box-sizing: border-box;
+}
+#adminSecondFactorPassword:focus {
+    outline: none; border-color: #197d83;
+    box-shadow: 0 0 0 2px rgba(25,125,131,.12);
+}
+.admin-password-visibility-row {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: -2px;
+    margin-bottom: 4px;
+}
+.admin-password-visibility-toggle {
+    border: 1px solid #9fb0ba;
+    background: #f7fafb;
+    color: #274956;
+    border-radius: 999px;
+    padding: 6px 12px;
+    font-size: 14px;
+    cursor: pointer;
+}
+.admin-password-visibility-toggle:hover {
+    background: #eef5f6;
+    border-color: #6f949b;
+}
+.admin-password-visibility-toggle[aria-pressed="true"] {
+    background: #e5f3f3;
+    border-color: #197d83;
+    color: #0f6267;
+    font-weight: 600;
+}
+.admin-second-factor-actions {
+    display: flex; justify-content: center; gap: 10px; margin-top: 14px;
+}
+
 .login-card {
     width: min(380px, calc(100vw - 40px));
     background: white;
@@ -1138,6 +1198,16 @@
     line-height: 1.5;
 }
 
+.admin-role-switch-retry {
+    border: 1px solid #9fb6c4;
+    background: #fff;
+    color: #17384b;
+    padding: 6px 10px;
+    font-family: inherit;
+    font-size: 12px;
+    cursor: pointer;
+}
+
 @media (max-width: 760px) {
     .admin-role-switch-bar {
         align-items: stretch;
@@ -1185,15 +1255,23 @@
 .admin-table4-number-input { min-width:115px; text-align:right; }
 .admin-table4-project-input { min-width:170px; }
 .admin-table4-input.dirty, .table4-ecology-input.dirty { background:#fff8df; border-color:#c89c2b; }
+/* 驗證舊 Session 期間只顯示中性狀態，避免 F5 先露出登入表單。 */
+.login-gate.auth-checking .login-card { display: none; }
+.login-gate.auth-checking::after {
+    content: "正在確認登入狀態…";
+    display: block; padding: 24px 32px; border-radius: 8px;
+    background: #fff; color: #263d50; font-size: 17px;
+    box-shadow: 0 8px 28px rgba(0,0,0,0.12);
+}
 </style>
 </head>
 
 <body>
-    <div id="loginGate" class="login-gate">
+    <div id="loginGate" class="login-gate auth-checking">
         <div class="login-card">
             <h2>河川分署工程提報系統</h2>
 <div class="login-subtitle">
-    請輸入機關或單位完整名稱及4位數登入碼
+    請輸入機關或單位全銜及登入碼
 </div>
 
 <input
@@ -1210,33 +1288,41 @@
     例如：第Ｏ河川分署、ＯＯＯＯ組
 </div>
             <input id="loginCode" type="text" inputmode="numeric" maxlength="4" autocomplete="off" placeholder="請輸入登入碼">
+
             <button type="button" id="loginButton" class="primary-button">
                 登入
             </button>
             <div id="loginMessage" class="login-message"></div>
         </div>
     </div>
+
+    <div id="adminSecondFactorGate" class="admin-second-factor-gate hidden">
+        <div class="admin-second-factor-card" role="dialog" aria-modal="true" aria-labelledby="adminSecondFactorTitle">
+            <h3 id="adminSecondFactorTitle">管理者身分驗證</h3>
+            <p id="adminSecondFactorMessage">請再輸入管理者專屬密碼。</p>
+            <input id="adminSecondFactorPassword" type="password" maxlength="128" autocomplete="off" placeholder="請輸入管理者專屬密碼">
+            <div class="admin-password-visibility-row">
+                <button type="button" id="adminPasswordVisibilityToggle" class="admin-password-visibility-toggle" aria-pressed="false">顯示密碼</button>
+            </div>
+            <div id="adminSecondFactorStatus" class="login-message"></div>
+            <div class="admin-second-factor-actions">
+                <button type="button" id="adminSecondFactorCancel" class="secondary-button">取消</button>
+                <button type="button" id="adminSecondFactorConfirm" class="primary-button">驗證</button>
+            </div>
+        </div>
+    </div>
     <div class="header">河川分署工程提報系統</div>
 
     <div id="adminRoleSwitchBar" class="admin-role-switch-bar" style="display:none;">
         <label for="adminRoleSwitchSelect">管理者功能切換：</label>
-        <select id="adminRoleSwitchSelect">
+        <select id="adminRoleSwitchSelect" disabled>
             <option value="admin">管理者／河川分署功能</option>
-            <optgroup label="組室功能">
-                <option value="office:土地管理組">土地管理組</option>
-                <option value="office:水文技術組">水文技術組</option>
-                <option value="office:水利行政組">水利行政組</option>
-                <option value="office:工程事務組">工程事務組</option>
-                <option value="office:綜合企劃組">綜合企劃組</option>
-                <option value="office:資訊室">資訊室</option>
-                <option value="office:秘書室">秘書室</option>
-                <option value="office:水利防災組">水利防災組</option>
-                <option value="riverCoast">河川海岸組</option>
-            </optgroup>
         </select>
         <span id="adminRoleSwitchStatus" class="admin-role-switch-status">
             管理者可直接切換並使用各組室功能。
         </span>
+        <button type="button" id="adminRoleSwitchRetryButton" class="admin-role-switch-retry"
+                style="display:none;">重新載入選單</button>
     </div>
 
     <div class="toolbar">
@@ -1255,8 +1341,13 @@
             <option value="10">第十河川分署</option>
         </select>
         <div class="toolbar-export-group">
-            <button type="button" class="primary-button" id="meetingExcelExportButton" style="display:none;">📥 匯出會議附件 Excel</button>
+            <button type="button" class="primary-button" id="divisionExcelExportButton" style="display:none;">📥 下載工程填報資料</button>
+            <span id="divisionExcelExportStatus" class="meeting-export-status"></span>
+
+            <button type="button" class="primary-button" id="meetingExcelExportButton" style="display:none;">📥 下載開會資料</button>
             <span id="meetingExcelExportStatus" class="meeting-export-status"></span>
+            <button type="button" class="primary-button" id="approvedExcelExportButton" style="display:none;">📥 下載核定資料</button>
+            <span id="approvedExcelExportStatus" class="meeting-export-status"></span>
         </div>
     </div>
     <div class="page-tabs">
@@ -1588,7 +1679,8 @@
                                 class="helper-text"
                                 style="display:none;"
                             >
-                                可從建議名稱選擇後再自行修改；「○」部分請依實際工程名稱調整。
+                                <div id="caseNameHelperNote1">備註1：可從建議名稱選擇後再自行修改；「○」部分請依實際工程名稱調整。</div>
+                                <div id="caseNameHelperNote2" style="margin-top:4px;">備註2：河川及區排工程如非整段辦理，可於○○堤防(護岸)後方加註斷面(LOO-LOO)或(ROO-ROO)。</div>
                             </div>
                         </div>
                     </div>
@@ -2119,6 +2211,17 @@
     let currentAuthRole = "";
     let currentAuthDivisionId = "";
 
+    let loginRequestTimer = null;
+    let verifySessionTimer = null;
+    let verifySessionPending = false;
+    let verifySessionToken = '';
+    const AUTH_IDLE_LIMIT_MS = 30 * 60 * 1000;
+    let lastUserAuthActivity = Date.now();
+    let sessionActivityPending = false;
+    let sessionActivityToken = '';
+    let sessionActivityTimer = null;
+    let lastSessionActivityRequestAt = 0;
+
 
     const loginGate =
         document.getElementById(
@@ -2134,6 +2237,25 @@
         document.getElementById(
             "loginCode"
         );
+
+    const adminSecondFactorGate =
+        document.getElementById("adminSecondFactorGate");
+    const adminSecondFactorTitle =
+        document.getElementById("adminSecondFactorTitle");
+    const adminSecondFactorMessage =
+        document.getElementById("adminSecondFactorMessage");
+    const adminSecondFactorPassword =
+        document.getElementById("adminSecondFactorPassword");
+    const adminSecondFactorStatus =
+        document.getElementById("adminSecondFactorStatus");
+    const adminPasswordVisibilityToggle =
+        document.getElementById("adminPasswordVisibilityToggle");
+    const adminSecondFactorCancel =
+        document.getElementById("adminSecondFactorCancel");
+    const adminSecondFactorConfirm =
+        document.getElementById("adminSecondFactorConfirm");
+
+    let adminSecondFactorState = null;
 
     const loginButton =
         document.getElementById(
@@ -2164,6 +2286,8 @@
             token
         );
 
+        lastUserAuthActivity = Date.now();
+        lastSessionActivityRequestAt = 0;
         syncAuthTokenToForms();
 
     }
@@ -2171,6 +2295,11 @@
 
     function clearAuthToken() {
 
+        verifySessionPending = false;
+        if (verifySessionTimer) { clearTimeout(verifySessionTimer); verifySessionTimer = null; }
+        if (sessionActivityTimer) { clearTimeout(sessionActivityTimer); sessionActivityTimer = null; }
+        sessionActivityPending = false;
+        sessionActivityToken = '';
         sessionStorage.removeItem(
             AUTH_STORAGE_KEY
         );
@@ -2228,6 +2357,18 @@
             );
 
 
+        if (divisionExcelExportButton) {
+            divisionExcelExportButton.style.display =
+                currentAuthRole === "division"
+                    ? ""
+                    : "none";
+        }
+
+        if (divisionExcelExportStatus) {
+            divisionExcelExportStatus.textContent = "";
+        }
+
+
         if (meetingExcelExportButton) {
             meetingExcelExportButton.style.display =
                 currentAuthRole === "admin"
@@ -2238,6 +2379,10 @@
         if (meetingExcelExportStatus) {
             meetingExcelExportStatus.textContent = "";
         }
+        if (approvedExcelExportButton) {
+            approvedExcelExportButton.style.display = currentAuthRole === "admin" ? "" : "none";
+        }
+        if (approvedExcelExportStatus) approvedExcelExportStatus.textContent = "";
 
 
         if (
@@ -2278,6 +2423,7 @@
 
     function showLoginGate(message) {
 
+        loginGate.classList.remove('auth-checking');
         loginGate.classList.remove(
             "hidden"
         );
@@ -2288,6 +2434,8 @@
         loginDivisionCode.value = "";
         loginCode.value = "";
 
+        closeAdminSecondFactor_();
+
         setTimeout(function() {
             loginDivisionCode.focus();
         }, 50);
@@ -2297,6 +2445,7 @@
 
     function hideLoginGate() {
 
+        loginGate.classList.remove('auth-checking');
         loginGate.classList.add(
             "hidden"
         );
@@ -2318,7 +2467,7 @@
             clearAuthToken();
 
             showLoginGate(
-                "登入已失效，請重新登入。"
+                "登入狀態已失效，請重新登入。"
             );
 
             return true;
@@ -2329,6 +2478,299 @@
 
     }
 
+
+
+    function closeAdminSecondFactor_() {
+        adminSecondFactorState = null;
+
+        if (adminSecondFactorPassword) {
+            adminSecondFactorPassword.value = "";
+            adminSecondFactorPassword.type = "password";
+        }
+
+        if (adminPasswordVisibilityToggle) {
+            adminPasswordVisibilityToggle.textContent = "顯示密碼";
+            adminPasswordVisibilityToggle.setAttribute("aria-pressed", "false");
+        }
+
+        if (adminSecondFactorStatus) adminSecondFactorStatus.textContent = "";
+        if (adminSecondFactorGate) adminSecondFactorGate.classList.add("hidden");
+        if (adminSecondFactorConfirm) adminSecondFactorConfirm.disabled = false;
+        if (adminSecondFactorCancel) adminSecondFactorCancel.disabled = false;
+    }
+
+    function showAdminSecondFactor_(response) {
+
+        const isRiverCoast =
+            response &&
+            response.requiresRiverCoastPassword === true;
+
+        const isAdmin =
+            response &&
+            response.requiresAdminPassword === true;
+
+        if (
+            !response ||
+            !response.challengeId ||
+            !response.challengeNonce ||
+            (
+                isAdmin &&
+                !response.adminSalt
+            ) ||
+            (
+                !isAdmin &&
+                !isRiverCoast
+            )
+        ) {
+            loginMessage.textContent =
+                "第二階段驗證資料不完整，請重新登入。";
+            loginButton.disabled = false;
+            return;
+        }
+
+
+        adminSecondFactorState = {
+            factorType:
+                isRiverCoast
+                    ? "riverCoast"
+                    : "admin",
+            challengeId:
+                String(response.challengeId),
+            nonce:
+                String(response.challengeNonce),
+            salt:
+                isAdmin
+                    ? String(response.adminSalt)
+                    : ""
+        };
+
+
+        if (isRiverCoast) {
+            adminSecondFactorTitle.textContent =
+                "河川海岸組身分驗證";
+            adminSecondFactorMessage.textContent =
+                "請再輸入河川海岸組專屬密碼。";
+            adminSecondFactorPassword.placeholder =
+                "請輸入河川海岸組專屬密碼";
+        } else {
+            adminSecondFactorTitle.textContent =
+                "管理者身分驗證";
+            adminSecondFactorMessage.textContent =
+                "請再輸入管理者專屬密碼。";
+            adminSecondFactorPassword.placeholder =
+                "請輸入管理者專屬密碼";
+        }
+
+
+        adminSecondFactorPassword.value = "";
+        adminSecondFactorPassword.type = "password";
+
+        if (adminPasswordVisibilityToggle) {
+            adminPasswordVisibilityToggle.textContent = "顯示密碼";
+            adminPasswordVisibilityToggle.setAttribute("aria-pressed", "false");
+        }
+
+        adminSecondFactorStatus.textContent = "";
+        adminSecondFactorGate.classList.remove("hidden");
+        loginMessage.textContent = "已完成第一階段驗證。";
+        setTimeout(function() { adminSecondFactorPassword.focus(); }, 50);
+    }
+
+    async function sha256Hex_(text) {
+        if (!window.crypto || !window.crypto.subtle || typeof TextEncoder === "undefined") {
+            throw new Error("目前瀏覽器不支援安全的管理者第二階段驗證。");
+        }
+        const encoded = new TextEncoder().encode(String(text));
+        const digest = await window.crypto.subtle.digest("SHA-256", encoded);
+        return Array.from(new Uint8Array(digest))
+            .map(function(byte) { return byte.toString(16).padStart(2, "0"); })
+            .join("");
+    }
+
+    async function submitAdminSecondFactor_() {
+        if (!adminSecondFactorState) {
+            closeAdminSecondFactor_();
+            loginMessage.textContent = "管理者驗證已失效，請重新登入。";
+            loginButton.disabled = false;
+            return;
+        }
+
+        const password = adminSecondFactorPassword.value;
+        if (!password) {
+            adminSecondFactorStatus.textContent =
+                adminSecondFactorState.factorType === "riverCoast"
+                    ? "請輸入河川海岸組專屬密碼。"
+                    : "請輸入管理者專屬密碼。";
+            adminSecondFactorPassword.focus();
+            return;
+        }
+
+        adminSecondFactorConfirm.disabled = true;
+        adminSecondFactorCancel.disabled = true;
+        adminSecondFactorStatus.textContent =
+            adminSecondFactorState.factorType === "riverCoast"
+                ? "河川海岸組身分驗證中..."
+                : "管理者身分驗證中...";
+
+        try {
+
+            let proof = "";
+            let secondFactorQuery = "";
+
+            if (
+                adminSecondFactorState.factorType ===
+                "riverCoast"
+            ) {
+
+                proof = await sha256Hex_(
+                    password +
+                    "\n" +
+                    adminSecondFactorState.nonce
+                );
+
+                secondFactorQuery =
+                    "&riverCoastChallengeId=" +
+                    encodeURIComponent(
+                        adminSecondFactorState.challengeId
+                    ) +
+                    "&riverCoastProof=" +
+                    encodeURIComponent(
+                        proof
+                    );
+
+            } else {
+
+                const verifier = await sha256Hex_(
+                    adminSecondFactorState.salt +
+                    "\n" +
+                    password
+                );
+
+                proof = await sha256Hex_(
+                    verifier +
+                    "\n" +
+                    adminSecondFactorState.nonce
+                );
+
+                secondFactorQuery =
+                    "&adminChallengeId=" +
+                    encodeURIComponent(
+                        adminSecondFactorState.challengeId
+                    ) +
+                    "&adminProof=" +
+                    encodeURIComponent(
+                        proof
+                    );
+            }
+
+
+            adminSecondFactorPassword.value = "";
+
+            const oldScript = document.getElementById("adminSecondFactorJsonp");
+            if (oldScript) oldScript.remove();
+
+            const script = document.createElement("script");
+            script.id = "adminSecondFactorJsonp";
+            script.src =
+                GAS_URL +
+                "?action=login" +
+                secondFactorQuery +
+                "&callback=handleAdminSecondFactorResponse" +
+                "&_=" + Date.now();
+
+            script.onerror = function() {
+                const currentScript = document.getElementById("adminSecondFactorJsonp");
+                if (currentScript) currentScript.remove();
+                closeAdminSecondFactor_();
+                loginButton.disabled = false;
+                loginMessage.textContent = "第二階段驗證失敗，請重新登入。";
+            };
+
+            document.body.appendChild(script);
+        } catch (error) {
+            adminSecondFactorConfirm.disabled = false;
+            adminSecondFactorCancel.disabled = false;
+            adminSecondFactorStatus.textContent =
+                error && error.message ? error.message : "管理者驗證失敗。";
+        }
+    }
+
+    function handleAdminSecondFactorResponse(response) {
+        const script = document.getElementById("adminSecondFactorJsonp");
+        if (script) script.remove();
+
+        closeAdminSecondFactor_();
+        loginButton.disabled = false;
+
+        if (!response || response.success !== true || !response.token) {
+            loginMessage.textContent =
+                response && response.message ? response.message : "機關／單位名稱或登入碼錯誤，請重新確認。";
+            loginCode.value = "";
+            loginCode.focus();
+            return;
+        }
+
+        setAuthToken(response.token);
+        applyAuthScope(response.role, response.divisionId, response.officeName);
+        hideLoginGate();
+    }
+
+    adminSecondFactorConfirm.addEventListener("click", submitAdminSecondFactor_);
+    adminSecondFactorCancel.addEventListener("click", function() {
+        closeAdminSecondFactor_();
+        loginButton.disabled = false;
+        loginMessage.textContent = "已取消第二階段驗證。";
+        loginCode.value = "";
+        loginCode.focus();
+    });
+    adminSecondFactorPassword.addEventListener("keydown", function(event) {
+        if (event.key === "Enter") submitAdminSecondFactor_();
+    });
+
+    if (
+        adminPasswordVisibilityToggle &&
+        adminSecondFactorPassword
+    ) {
+        adminPasswordVisibilityToggle.addEventListener(
+            "click",
+            function() {
+
+                const isVisible =
+                    adminSecondFactorPassword.type === "text";
+
+                adminSecondFactorPassword.type =
+                    isVisible
+                        ? "password"
+                        : "text";
+
+                adminPasswordVisibilityToggle.textContent =
+                    isVisible
+                        ? "顯示密碼"
+                        : "隱藏密碼";
+
+                adminPasswordVisibilityToggle.setAttribute(
+                    "aria-pressed",
+                    isVisible
+                        ? "false"
+                        : "true"
+                );
+
+                adminSecondFactorPassword.focus();
+
+                try {
+                    const end =
+                        adminSecondFactorPassword.value.length;
+
+                    adminSecondFactorPassword.setSelectionRange(
+                        end,
+                        end
+                    );
+                } catch (error) {
+                    // 不支援游標定位時不影響顯示／隱藏功能。
+                }
+            }
+        );
+    }
 
     function loginSystem() {
 
@@ -2356,7 +2798,7 @@
         ) {
 
             loginMessage.textContent =
-                "請輸入4位數登入碼。";
+                "機關／單位名稱或登入碼錯誤，請重新確認。";
 
             loginCode.focus();
 
@@ -2410,11 +2852,29 @@
         script.onerror =
             function() {
 
+                if (loginRequestTimer) {
+                    clearTimeout(
+                        loginRequestTimer
+                    );
+
+                    loginRequestTimer =
+                        null;
+                }
+
+                const loginScript =
+                    document.getElementById(
+                        "loginJsonp"
+                    );
+
+                if (loginScript) {
+                    loginScript.remove();
+                }
+
                 loginButton.disabled =
                     false;
 
                 loginMessage.textContent =
-                    "登入驗證失敗，請稍後再試。";
+                    "登入驗證暫時無法完成，請稍後再試。";
 
             };
 
@@ -2423,6 +2883,37 @@
             script
         );
 
+        if (loginRequestTimer) {
+            clearTimeout(
+                loginRequestTimer
+            );
+        }
+
+        loginRequestTimer =
+            setTimeout(
+                function() {
+
+                    const pendingScript =
+                        document.getElementById(
+                            "loginJsonp"
+                        );
+
+                    if (pendingScript) {
+                        pendingScript.remove();
+                    }
+
+                    loginButton.disabled =
+                        false;
+
+                    loginMessage.textContent =
+                        "登入驗證逾時，請確認網路後再試。";
+
+                    loginRequestTimer =
+                        null;
+                },
+                20000
+            );
+
     }
 
 
@@ -2430,8 +2921,39 @@
         response
     ) {
 
+        if (loginRequestTimer) {
+            clearTimeout(
+                loginRequestTimer
+            );
+
+            loginRequestTimer =
+                null;
+        }
+
+        const loginScript =
+            document.getElementById(
+                "loginJsonp"
+            );
+
+        if (loginScript) {
+            loginScript.remove();
+        }
+
         loginButton.disabled =
             false;
+
+
+        if (
+            response &&
+            response.success === true &&
+            (
+                response.requiresAdminPassword === true ||
+                response.requiresRiverCoastPassword === true
+            )
+        ) {
+            showAdminSecondFactor_(response);
+            return;
+        }
 
 
         if (
@@ -2444,7 +2966,7 @@
                 response &&
                 response.message ?
                 response.message :
-                "登入資料錯誤。";
+                "機關／單位名稱或登入碼錯誤，請重新確認。";
 
             loginCode.value = "";
             loginCode.focus();
@@ -2507,101 +3029,133 @@
 
 
     function verifyExistingSession() {
-
-        const token =
-            getAuthToken();
-
-
+        const token = getAuthToken();
         if (!token) {
-
             showLoginGate("");
-
             return;
-
         }
-
-
-        const oldScript =
-            document.getElementById(
-                "verifySessionJsonp"
-            );
-
-        if (oldScript) {
-            oldScript.remove();
-        }
-
-
-        const script =
-            document.createElement(
-                "script"
-            );
-
-
-        script.id =
-            "verifySessionJsonp";
-
-
-        script.src =
-            GAS_URL +
-            "?action=verifySession" +
-            "&token=" +
-            encodeURIComponent(
-                token
-            ) +
-            "&callback=handleVerifySession" +
-            "&_=" +
-            Date.now();
-
-
-        script.onerror =
-            function() {
-
-                clearAuthToken();
-
-                showLoginGate(
-                    "登入狀態驗證失敗，請重新登入。"
-                );
-
-            };
-
-
-        document.body.appendChild(
-            script
-        );
-
+        loginGate.classList.add('auth-checking');
+        loginGate.classList.remove('hidden');
+        verifySessionPending = true;
+        verifySessionToken = token;
+        if (verifySessionTimer) clearTimeout(verifySessionTimer);
+        const oldScript = document.getElementById('verifySessionJsonp');
+        if (oldScript) oldScript.remove();
+        const script = document.createElement('script');
+        script.id = 'verifySessionJsonp';
+        script.src = GAS_URL + '?action=verifySession&token=' +
+            encodeURIComponent(token) + '&callback=handleVerifySession&_=' + Date.now();
+        script.onerror = function() {
+            if (!verifySessionPending || verifySessionToken !== token) return;
+            verifySessionPending = false;
+            if (verifySessionTimer) clearTimeout(verifySessionTimer);
+            clearAuthToken();
+            showLoginGate('登入驗證暫時無法完成，請稍後再試。');
+        };
+        document.body.appendChild(script);
+        verifySessionTimer = setTimeout(function() {
+            if (!verifySessionPending || verifySessionToken !== token) return;
+            verifySessionPending = false;
+            script.remove();
+            clearAuthToken();
+            showLoginGate('登入驗證暫時無法完成，請稍後再試。');
+        }, 20000);
     }
 
-
-    function handleVerifySession(
-        response
-    ) {
-
-        if (
-            response &&
-            response.success === true
-        ) {
-
+    function handleVerifySession(response) {
+        // 若先前的驗證已逾時／Session 已清除，不得用舊回呼重新登入。
+        if (!verifySessionPending || getAuthToken() !== verifySessionToken) return;
+        verifySessionPending = false;
+        if (verifySessionTimer) { clearTimeout(verifySessionTimer); verifySessionTimer = null; }
+        const script = document.getElementById('verifySessionJsonp');
+        if (script) script.remove();
+        if (response && response.success === true) {
             syncAuthTokenToForms();
-
-            applyAuthScope(
-                response.role,
-                response.divisionId
-            );
-
+            applyAuthScope(response.role, response.divisionId);
+            lastUserAuthActivity = Date.now();
             hideLoginGate();
-
+            sendAuthActivity_(); // F5 是使用者主動操作，成功驗證後刷新活動時間。
             return;
-
         }
-
-
         clearAuthToken();
-
-        showLoginGate(
-            "請重新登入系統。"
-        );
-
+        showLoginGate('登入狀態已失效，請重新登入。');
     }
+
+    // 僅將真實操作算入活動時間；背景 GET/POST 不延長 Session。
+    function noteAuthUserActivity_() {
+        if (!getAuthToken() || !loginGate.classList.contains('hidden')) return;
+        lastUserAuthActivity = Date.now();
+    }
+    ['pointerdown', 'keydown', 'touchstart', 'wheel'].forEach(function(type) {
+        document.addEventListener(type, noteAuthUserActivity_, {passive:true});
+    });
+    // 防止滑鼠移動頻率過高導致額外負擔；只更新本機時間戳。
+    document.addEventListener('pointermove', function() {
+        if (Date.now() - lastUserAuthActivity >= 30000) noteAuthUserActivity_();
+    }, {passive:true});
+
+    function sendAuthActivity_() {
+        const token = getAuthToken();
+        if (!token || sessionActivityPending || verifySessionPending ||
+            !loginGate.classList.contains('hidden')) return;
+        const now = Date.now();
+        if (now - lastUserAuthActivity >= AUTH_IDLE_LIMIT_MS) return;
+        if (now - lastSessionActivityRequestAt < 60000) return;
+        lastSessionActivityRequestAt = now;
+        sessionActivityPending = true;
+        sessionActivityToken = token;
+        const old = document.getElementById('sessionActivityJsonp');
+        if (old) old.remove();
+        const script = document.createElement('script');
+        script.id = 'sessionActivityJsonp';
+        script.src = GAS_URL + '?action=sessionActivity&token=' +
+            encodeURIComponent(token) + '&callback=handleSessionActivity_&_=' + now;
+        script.onerror = function() {
+            if (sessionActivityTimer) clearTimeout(sessionActivityTimer);
+            if (getAuthToken() === token) sessionActivityPending = false;
+            script.remove();
+        };
+        document.body.appendChild(script);
+        sessionActivityTimer = setTimeout(function() {
+            if (getAuthToken() === token) sessionActivityPending = false;
+            script.remove();
+            sessionActivityTimer = null;
+        }, 20000);
+    }
+
+    function handleSessionActivity_(response) {
+        if (!sessionActivityPending || sessionActivityToken !== getAuthToken()) return;
+        sessionActivityPending = false;
+        sessionActivityToken = '';
+        if (sessionActivityTimer) { clearTimeout(sessionActivityTimer); sessionActivityTimer = null; }
+        const script = document.getElementById('sessionActivityJsonp');
+        if (script) script.remove();
+        if (response && response.authRequired === true) {
+            clearAuthToken();
+            showLoginGate('登入狀態已失效，請重新登入。');
+        }
+    }
+
+    setInterval(function() {
+        const token = getAuthToken();
+        if (!token || !loginGate.classList.contains('hidden')) return;
+        const idleMs = Date.now() - lastUserAuthActivity;
+        if (idleMs >= AUTH_IDLE_LIMIT_MS) {
+            clearAuthToken();
+            showLoginGate('已超過30分鐘未操作，請重新登入。');
+            return;
+        }
+        // 只在最近兩分鐘內有真人操作，才對後端送心跳。
+        if (idleMs < 120000) sendAuthActivity_();
+    }, 15000);
+    document.addEventListener('visibilitychange', function() {
+        if (!document.hidden && getAuthToken() && loginGate.classList.contains('hidden')) {
+            if (Date.now() - lastUserAuthActivity >= AUTH_IDLE_LIMIT_MS) {
+                clearAuthToken();
+                showLoginGate('已超過30分鐘未操作，請重新登入。');
+            }
+        }
+    });
     // -------------------------
     // 河川分署基本資料
     // （工程範圍、提報內容位置圖等既有功能仍會使用座標）
@@ -2785,6 +3339,11 @@
             "appendix1CaseNameHelperText"
         );
 
+    const caseNameHelperNote1 =
+        document.getElementById("caseNameHelperNote1");
+    const caseNameHelperNote2 =
+        document.getElementById("caseNameHelperNote2");
+
 
     function getAppendix1CaseNameTemplates_() {
 
@@ -2849,6 +3408,37 @@
     }
 
 
+    // 附表2～4使用承辦提供的原文範例；附表5暫無範例。
+    // 附表1原有的溪別帶入方式保持不變。
+    function getCaseNameTemplatesByAppendix_(appendixType) {
+        if (appendixType === "appendix1") {
+            return getAppendix1CaseNameTemplates_();
+        }
+        if (appendixType === "appendix2") {
+            return [
+                { category: "委託測設監造", value: "○○排水0K+000~0K+000工程委託規劃設計技術服務" },
+                { category: "用地先期", value: "○○排水0K+000~0K+000工程用地先期作業" },
+                { category: "用地取得", value: "○○排水0K+000~0K+000工程用地取得" },
+                { category: "工程", value: "○○排水0K+000~0K+000工程" },
+                { category: "橋梁改建", value: "○○排水○橋梁改建工程" }
+            ];
+        }
+        if (appendixType === "appendix3") {
+            return [
+                { category: "工程", value: "○○海岸防護工程" },
+                { category: "逕流分擔", value: "○○逕流分擔設施工程" }
+            ];
+        }
+        if (appendixType === "appendix4") {
+            return [
+                { category: "工程", value: "○○溪○○堤防(護岸)環境營造工程" },
+                { category: "工程", value: "○○海堤環境營造工程" }
+            ];
+        }
+        return [];
+    }
+
+
     function updateAppendix1CaseNameSuggestions() {
 
         if (
@@ -2863,41 +3453,40 @@
             getCurrentAppendixType();
 
 
-        // 只有附表1提供這組案件名稱建議。
-        if (
-            appendixType !==
-            "appendix1"
-        ) {
+        // 附表1～4提供案件名稱建議，附表5暫不提供。
+        const hasSuggestions = [
+            "appendix1", "appendix2", "appendix3", "appendix4"
+        ].indexOf(appendixType) !== -1;
 
-            caseNameInput.removeAttribute(
-                "list"
-            );
-
-            appendix1CaseNameSuggestions.innerHTML =
-                "";
-
-            if (
-                appendix1CaseNameHelperText
-            ) {
-                appendix1CaseNameHelperText.style.display =
-                    "none";
+        if (!hasSuggestions) {
+            caseNameInput.removeAttribute("list");
+            caseNameInput.placeholder = "請輸入案件名稱";
+            appendix1CaseNameSuggestions.innerHTML = "";
+            if (appendix1CaseNameHelperText) {
+                appendix1CaseNameHelperText.style.display = "none";
             }
-
             return;
         }
 
+        caseNameInput.setAttribute("list", "appendix1CaseNameSuggestions");
+        caseNameInput.placeholder = appendixType === "appendix1"
+            ? "可直接輸入，附表1亦可從建議名稱選擇"
+            : "可直接輸入，亦可從建議名稱選擇";
 
-        caseNameInput.setAttribute(
-            "list",
-            "appendix1CaseNameSuggestions"
-        );
+        if (appendix1CaseNameHelperText) {
+            appendix1CaseNameHelperText.style.display = "";
+        }
 
-
-        if (
-            appendix1CaseNameHelperText
-        ) {
-            appendix1CaseNameHelperText.style.display =
-                "";
+        // 備註1、備註2只用於河川及區排；其餘有建議範例的附表沿用原提示。
+        const isRiverOrDrainage =
+            appendixType === "appendix1" || appendixType === "appendix2";
+        if (caseNameHelperNote1) {
+            caseNameHelperNote1.textContent =
+                (isRiverOrDrainage ? "備註1：" : "") +
+                "可從建議名稱選擇後再自行修改；「○」部分請依實際工程名稱調整。";
+        }
+        if (caseNameHelperNote2) {
+            caseNameHelperNote2.style.display = isRiverOrDrainage ? "" : "none";
         }
 
 
@@ -2911,11 +3500,11 @@
 
 
         const templates =
-            getAppendix1CaseNameTemplates_();
+            getCaseNameTemplatesByAppendix_(appendixType);
 
 
-        // 若已選類別，將最符合該類別的範本排在最前面，
-        // 但仍保留全部 6 種原則供使用者選擇。
+        // 已選類別時，優先排列相同類別的建議名稱，
+        // 但仍保留該附表的所有範例，供使用者選擇。
         templates.sort(
             function(a, b) {
 
@@ -7879,15 +8468,13 @@
             { id: "drainageSystem", label: "排水系統" },
             { id: "drainageName", label: "排水名稱" },
             { id: "leveeLength", label: "堤防(公尺)" },
-            { id: "revetmentLength", label: "護岸(公尺)" },
-            { id: "envImprovementArea", label: "整體環境改善面積(公頃)" }
+            { id: "revetmentLength", label: "護岸(公尺)" }
         ],
 
         appendix3: [
             { id: "coastName", label: "海岸名稱" },
             { id: "improvementArea", label: "改善面積(公頃)" },
-            { id: "improvementLength", label: "改善長度(公尺)" },
-            { id: "envImprovementArea", label: "整體環境改善面積(公頃)" }
+            { id: "improvementLength", label: "改善長度(公尺)" }
         ],
 
         appendix4: [
@@ -7903,8 +8490,7 @@
             { id: "leveeLength", label: "堤防(海堤)(公尺)" },
             { id: "revetmentLength", label: "護岸(公尺)" },
             { id: "gateImprovementCount", label: "水門更新改善(座)" },
-            { id: "floodRoadArea", label: "水防道路維護(平方公尺)" },
-            { id: "envImprovementArea", label: "整體環境改善面積(公頃)" }
+            { id: "floodRoadArea", label: "水防道路維護(平方公尺)" }
         ]
     };
 
@@ -8005,6 +8591,15 @@
             // --------------------------------
             // 3. 完整性檢查
             // --------------------------------
+
+            // 附表4、5以可見的溪別／排水／海岸選單為準，
+            // 儲存前再同步一次正式儲存欄位，避免隱藏欄位值未更新。
+            if (
+                getCurrentAppendixType() === "appendix4" ||
+                getCurrentAppendixType() === "appendix5"
+            ) {
+                syncAppendix4WaterbodyName();
+            }
 
             const validation =
                 validateCaseForm();
@@ -8165,11 +8760,20 @@
     const businessAppendixTypeSelect = document.getElementById("businessAppendixType");
     const dataStatus = document.getElementById("dataStatus");
     const refreshDataButton = document.getElementById("refreshDataButton");
+    const divisionExcelExportButton =
+        document.getElementById("divisionExcelExportButton");
+    const divisionExcelExportStatus =
+        document.getElementById("divisionExcelExportStatus");
+    let divisionExcelExportTimer = null;
+
     const meetingExcelExportButton =
         document.getElementById("meetingExcelExportButton");
+    const approvedExcelExportButton = document.getElementById("approvedExcelExportButton");
+    const approvedExcelExportStatus = document.getElementById("approvedExcelExportStatus");
     const meetingExcelExportStatus =
         document.getElementById("meetingExcelExportStatus");
     let meetingExcelExportTimer = null;
+    let approvedExcelExportTimer = null;
     let dataLoadTimer = null;
 
     const startCaseOrderButton =
@@ -10234,6 +10838,7 @@ function setBusinessCaseOrderControls() {
         meetingExcelExportButton.disabled =
             businessCaseOrderMode;
     }
+    if (approvedExcelExportButton) approvedExcelExportButton.disabled = businessCaseOrderMode;
 }
 
 
@@ -12043,6 +12648,236 @@ function openViewLineMap(
     }
 
 
+    function resetDivisionExcelExportUi() {
+
+        if (divisionExcelExportTimer) {
+            clearTimeout(
+                divisionExcelExportTimer
+            );
+
+            divisionExcelExportTimer =
+                null;
+        }
+
+
+        if (divisionExcelExportButton) {
+            divisionExcelExportButton.disabled =
+                false;
+        }
+
+
+        const oldScript =
+            document.getElementById(
+                "divisionExcelExportJsonp"
+            );
+
+        if (oldScript) {
+            oldScript.remove();
+        }
+    }
+
+
+    function exportDivisionAppendicesExcel() {
+
+        if (
+            currentAuthRole !==
+            "division"
+        ) {
+            alert(
+                "此功能僅限河川分署帳號使用。"
+            );
+            return;
+        }
+
+
+        const token =
+            getAuthToken();
+
+
+        if (!token) {
+            showLoginGate(
+                "登入已失效，請重新登入。"
+            );
+            return;
+        }
+
+
+        resetDivisionExcelExportUi();
+
+        divisionExcelExportButton.disabled =
+            true;
+
+        divisionExcelExportStatus.textContent =
+            "工程填報資料產製中，請稍候…";
+
+
+        const script =
+            document.createElement(
+                "script"
+            );
+
+        script.id =
+            "divisionExcelExportJsonp";
+
+        script.src =
+            GAS_URL +
+            "?action=exportDivisionAppendicesExcel" +
+            "&token=" +
+            encodeURIComponent(
+                token
+            ) +
+            "&callback=handleDivisionAppendicesExcelExport" +
+            "&_=" +
+            Date.now();
+
+
+        script.onerror =
+            function() {
+
+                resetDivisionExcelExportUi();
+
+                divisionExcelExportStatus.textContent =
+                    "Excel 產製失敗，請確認 Apps Script 部署版本。";
+            };
+
+
+        document.body.appendChild(
+            script
+        );
+
+
+        divisionExcelExportTimer =
+            setTimeout(
+                function() {
+
+                    resetDivisionExcelExportUi();
+
+                    divisionExcelExportStatus.textContent =
+                        "Excel 產製逾時，請稍後再試。";
+                },
+                120000
+            );
+    }
+
+
+    function handleDivisionAppendicesExcelExport(
+        response
+    ) {
+
+        resetDivisionExcelExportUi();
+
+
+        if (
+            handleAuthFailure(
+                response
+            )
+        ) {
+            return;
+        }
+
+
+        if (
+            !response ||
+            response.success !== true ||
+            !response.base64 ||
+            !response.fileName
+        ) {
+
+            divisionExcelExportStatus.textContent =
+                response &&
+                response.message
+                    ? response.message
+                    : "Excel 產製失敗。";
+
+            return;
+        }
+
+
+        try {
+
+            const blob =
+                base64ToDownloadBlob(
+                    response.base64,
+                    response.mimeType
+                );
+
+            const url =
+                URL.createObjectURL(
+                    blob
+                );
+
+            const link =
+                document.createElement(
+                    "a"
+                );
+
+            link.href =
+                url;
+
+            link.download =
+                response.fileName;
+
+            document.body.appendChild(
+                link
+            );
+
+            link.click();
+
+            link.remove();
+
+
+            setTimeout(
+                function() {
+                    URL.revokeObjectURL(
+                        url
+                    );
+                },
+                1000
+            );
+
+
+            const summary =
+                Array.isArray(
+                    response.summary
+                )
+                    ? response.summary
+                    : [];
+
+
+            const totalCount =
+                summary.reduce(
+                    function(
+                        total,
+                        item
+                    ) {
+                        return (
+                            total +
+                            Number(
+                                item.recordCount ||
+                                0
+                            )
+                        );
+                    },
+                    0
+                );
+
+
+            divisionExcelExportStatus.textContent =
+                "已下載工程填報資料，共 " +
+                totalCount +
+                " 筆案件。";
+
+
+        } catch (error) {
+
+            divisionExcelExportStatus.textContent =
+                "Excel 已產製，但瀏覽器下載失敗：" +
+                error.message;
+        }
+    }
+
+
+
     function resetMeetingExcelExportUi() {
         if (meetingExcelExportTimer) {
             clearTimeout(meetingExcelExportTimer);
@@ -12173,6 +13008,136 @@ function openViewLineMap(
     }
 
 
+    function resetApprovedExcelExportUi() {
+        if (approvedExcelExportTimer) {
+            clearTimeout(approvedExcelExportTimer);
+            approvedExcelExportTimer = null;
+        }
+
+        if (approvedExcelExportButton) {
+            approvedExcelExportButton.disabled = false;
+        }
+
+        const oldScript = document.getElementById(
+            "approvedExcelExportJsonp"
+        );
+
+        if (oldScript) {
+            oldScript.remove();
+        }
+    }
+
+
+    function exportApprovedExcel() {
+        if (currentAuthRole !== "admin") {
+            alert("此功能僅限管理模式使用。");
+            return;
+        }
+
+        const token = getAuthToken();
+
+        if (!token) {
+            showLoginGate("登入已失效，請重新登入。");
+            return;
+        }
+
+        resetApprovedExcelExportUi();
+        approvedExcelExportButton.disabled = true;
+        approvedExcelExportStatus.textContent =
+            "Excel 產製中，請稍候…";
+
+        const script = document.createElement("script");
+        script.id = "approvedExcelExportJsonp";
+        script.src =
+            GAS_URL +
+            "?action=exportApprovedExcel" +
+            "&token=" +
+            encodeURIComponent(token) +
+            "&callback=handleApprovedExcelExport" +
+            "&_=" +
+            Date.now();
+
+        script.onerror = function() {
+            resetApprovedExcelExportUi();
+            approvedExcelExportStatus.textContent =
+                "Excel 產製失敗，請確認 Apps Script 部署版本。";
+        };
+
+        document.body.appendChild(script);
+
+        approvedExcelExportTimer = setTimeout(function() {
+            resetApprovedExcelExportUi();
+            approvedExcelExportStatus.textContent =
+                "Excel 產製逾時，請稍後再試。";
+        }, 120000);
+    }
+
+
+    function handleApprovedExcelExport(response) {
+        resetApprovedExcelExportUi();
+
+        if (handleAuthFailure(response)) {
+            return;
+        }
+
+        if (
+            !response ||
+            response.success !== true ||
+            !response.base64 ||
+            !response.fileName
+        ) {
+            approvedExcelExportStatus.textContent =
+                response && response.message
+                    ? response.message
+                    : "Excel 產製失敗。";
+            return;
+        }
+
+        try {
+            const blob = base64ToDownloadBlob(
+                response.base64,
+                response.mimeType
+            );
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+
+            link.href = url;
+            link.download = response.fileName;
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+
+            setTimeout(function() {
+                URL.revokeObjectURL(url);
+            }, 1000);
+
+            const summary = Array.isArray(response.summary)
+                ? response.summary
+                : [];
+
+            const totalCount = summary.reduce(
+                function(total, item) {
+                    return (
+                        total +
+                        Number(item.recordCount || 0)
+                    );
+                },
+                0
+            );
+
+            approvedExcelExportStatus.textContent =
+                "已產製並下載核定資料 Excel，共匯入 " +
+                totalCount +
+                " 筆案件。";
+
+        } catch (error) {
+            approvedExcelExportStatus.textContent =
+                "Excel 已產製，但瀏覽器下載失敗：" +
+                error.message;
+        }
+    }
+
+
     refreshDataButton.addEventListener(
         "click",
         function() {
@@ -12181,11 +13146,22 @@ function openViewLineMap(
         }
     );
 
+    if (divisionExcelExportButton) {
+        divisionExcelExportButton.addEventListener(
+            "click",
+            exportDivisionAppendicesExcel
+        );
+    }
+
+
     if (meetingExcelExportButton) {
         meetingExcelExportButton.addEventListener(
             "click",
             exportMeetingExcel
         );
+    }
+    if (approvedExcelExportButton) {
+        approvedExcelExportButton.addEventListener("click", exportApprovedExcel);
     }
 
     syncDivisionToForm();
@@ -12539,6 +13515,7 @@ function openViewLineMap(
             "烏溪",
             "貓羅溪",
             "眉溪",
+            "南港溪",
             "北港溪",
             "大里溪",
             "旱溪",
@@ -12546,6 +13523,9 @@ function openViewLineMap(
             "筏子溪",
             "草湖溪",
             "大坑溪",
+            "樟平溪",
+            "平林溪",
+            "水長流溪",
             "北溝溪"
         ],
 
@@ -13157,6 +14137,14 @@ function openViewLineMap(
             );
         }
 
+        // 附表4、5的正式水體名稱欄位不可見；錯誤提示應標在實際選單。
+        ["appendix4Creek", "appendix4DrainageName", "appendix4CoastName"]
+            .forEach(function(id) {
+                const select = document.getElementById(id);
+                if (select) {
+                    select.classList.remove("required-field-error");
+                }
+            });
 
         // -----------------------------------
         // 檢查目前附表適用的一般欄位
@@ -13184,13 +14172,27 @@ function openViewLineMap(
                         field.label
                     );
 
-                    element.classList.add(
+                    let errorElement = element;
+                    if (field.id === "waterbodyName") {
+                        const flowType = flowCategoryInput
+                            ? flowCategoryInput.value : "";
+                        const visibleId = flowType === "河川"
+                            ? "appendix4Creek"
+                            : flowType === "區排"
+                                ? "appendix4DrainageName"
+                                : flowType === "海岸"
+                                    ? "appendix4CoastName" : "flowCategory";
+                        errorElement = document.getElementById(visibleId)
+                            || element;
+                    }
+
+                    errorElement.classList.add(
                         "required-field-error"
                     );
 
                     if (!firstInvalidElement) {
                         firstInvalidElement =
-                            element;
+                            errorElement;
                     }
                 }
             }
@@ -13542,10 +14544,20 @@ function openViewLineMap(
     /**
      * 附表1～附表5共用的「完整提報案件」判斷。
      *
-     * 各附表：
-     * - 「其他」可空白。
-     * - 「預估用地取得經費」僅類別為「用地先期」時必填。
-     * - 河海組初擬意見／結論、備註、系統案件ID不列入判斷。
+     * 重要原則：
+     * 「工程提報頁可以通過 validateCaseForm() 並成功儲存」
+     * 就應該在「提報內容」中被判定為完整案件。
+     *
+     * 因此這裡不再把 editableEndIndex 以前的所有欄位一律視為必填，
+     * 而是只檢查工程提報頁真正列入必填的欄位。
+     *
+     * 另外保留兩項條件式必填：
+     * - 「預估用地取得經費」僅類別＝「用地先期」時必填。
+     * - 「預估碳排量」僅類別＝「工程」時必填。
+     *
+     * 工程範圍繪製在儲存頁是另外檢查 lineGeoJSON；
+     * 在查詢資料列中則以「工程範圍代表座標點位」作為對應判斷，
+     * 因為該座標就是由工程範圍自動產生。
      */
     function getValidRowsForAppendix(
         rows,
@@ -13560,10 +14572,160 @@ function openViewLineMap(
             return [];
         }
 
+
         const config =
             getAppendixClientConfig(
                 appendixType
             );
+
+
+        // -------------------------------------------------
+        // 這些 index 完全對應工程提報頁的：
+        // COMMON_REQUIRED_CASE_FIELDS
+        // + APPENDIX_REQUIRED_FIELDS
+        //
+        // 0-based，與後端回傳 row[] 欄位位置一致。
+        // -------------------------------------------------
+        const requiredIndexesByAppendix = {
+
+            appendix1: [
+                // 共通必填
+                1,  // 類別
+                2,  // 分署別
+                3,  // 縣市
+                4,  // 鄉鎮市
+                7,  // 案件名稱
+                8,  // 建造物名稱
+                16, // 是否辦理核定階段生態檢核
+                18, // 工程範圍代表座標點位
+                25, // 116年預估使用經費
+                26, // 117年預估使用經費
+                27, // 118年預估使用經費
+                28, // 經費需求
+
+                // 附表1專用必填
+                5,  // 水系
+                6,  // 溪別
+                9,  // 堤防(公尺)
+                10, // 護岸(公尺)
+                17  // 河川小水力發電潛力案場初評結果
+            ],
+
+            appendix2: [
+                // 共通必填
+                1,
+                2,
+                3,
+                4,
+                6,  // 案件名稱
+                7,  // 建造物名稱
+                15, // 生態檢核
+                16, // 工程範圍代表座標點位
+                23, // 116年
+                24, // 117年
+                25, // 118年
+                26, // 經費需求
+
+                // 附表2專用必填
+                // 「排水系統」本身未另存欄位；
+                // 儲存後可由排水名稱反查，因此以排水名稱非空白代表已選定。
+                5,  // 排水名稱（同時代表排水系統已有效選定）
+                8,  // 堤防
+                9   // 護岸
+            ],
+
+            appendix3: [
+                // 共通必填
+                1,
+                2,
+                3,
+                4,
+                6,  // 案件名稱
+                7,  // 建造物名稱
+                15, // 生態檢核
+                16, // 工程範圍代表座標點位
+                23,
+                24,
+                25,
+                26,
+
+                // 附表3專用必填
+                5,  // 海岸名稱
+                8,  // 改善面積
+                9   // 改善長度
+            ],
+
+            appendix4: [
+                // 共通必填
+                1,
+                2,
+                3,
+                4,
+                7,  // 案件名稱
+                8,  // 建造物名稱
+                16, // 生態檢核
+                17, // 工程範圍代表座標點位
+                24,
+                25,
+                26,
+                27,
+
+                // 附表4專用必填
+                5,  // 流域別
+                6,  // 溪別、區排或海岸名稱
+                9,  // 整體環境改善長度
+                10  // 整體環境改善面積
+            ],
+
+            appendix5: [
+                // 共通必填
+                1,
+                2,
+                3,
+                4,
+                7,  // 案件名稱
+                8,  // 建造物名稱
+                18, // 生態檢核
+                19, // 工程範圍代表座標點位
+                26,
+                27,
+                28,
+                29,
+
+                // 附表5專用必填
+                5,  // 流域別
+                6,  // 溪別、區排或海岸名稱
+                9,  // 堤防(海堤)
+                10, // 護岸
+                11, // 水門更新改善
+                12  // 水防道路維護
+            ]
+        };
+
+
+        const requiredIndexes =
+            requiredIndexesByAppendix[
+                appendixType
+            ] ||
+            requiredIndexesByAppendix
+                .appendix1;
+
+
+        const hasValue =
+            function(value) {
+
+                return !(
+                    value ===
+                        undefined ||
+                    value ===
+                        null ||
+                    String(
+                        value
+                    ).trim() ===
+                        ""
+                );
+            };
+
 
         return rows.filter(
             function(row) {
@@ -13576,87 +14738,89 @@ function openViewLineMap(
                     return false;
                 }
 
+
+                // -----------------------------------------
+                // 與工程提報頁的一般必填欄位完全一致。
+                // 0、"0" 都是有效值，不會被誤判成空白。
+                // -----------------------------------------
                 for (
-                    let i = 1;
-                    i <=
-                    config.editableEndIndex;
+                    let i = 0;
+                    i <
+                    requiredIndexes.length;
                     i++
                 ) {
 
-                    // 「其他」可空白。
-                    if (
-                        i ===
-                        config.optionalOtherIndex
-                    ) {
-                        continue;
-                    }
-
-                    // 預估用地取得經費另做條件式判斷。
-                    if (
-                        i ===
-                        config.conditionalLandCostIndex
-                    ) {
-                        continue;
-                    }
-
-                    // 預估碳排量僅「工程」類別需要有值。
-                    if (
-                        i ===
-                            config.carbonIndex &&
-                        String(
-                            row[1] || ""
-                        ).trim() !==
-                            "工程"
-                    ) {
-                        continue;
-                    }
-
-                    const value =
-                        row[i];
+                    const columnIndex =
+                        requiredIndexes[i];
 
                     if (
-                        value ===
-                            undefined ||
-                        value ===
-                            null ||
-                        String(
-                            value
-                        ).trim() ===
-                            ""
+                        !hasValue(
+                            row[
+                                columnIndex
+                            ]
+                        )
                     ) {
                         return false;
                     }
                 }
+
 
                 const category =
                     String(
                         row[1] || ""
                     ).trim();
 
+
+                // -----------------------------------------
+                // 與 validateCaseForm() 一致：
+                // 只有「用地先期」需要預估用地取得經費。
+                // -----------------------------------------
                 if (
                     category ===
                     "用地先期"
                 ) {
 
-                    const landCost =
-                        row[
-                            config
-                                .conditionalLandCostIndex
-                        ];
-
                     if (
-                        landCost ===
-                            undefined ||
-                        landCost ===
-                            null ||
-                        String(
-                            landCost
-                        ).trim() ===
-                            ""
+                        !hasValue(
+                            row[
+                                config
+                                    .conditionalLandCostIndex
+                            ]
+                        )
                     ) {
                         return false;
                     }
                 }
+
+
+                // -----------------------------------------
+                // 與 validateCaseForm() 一致：
+                // 只有「工程」需要預估碳排量。
+                // -----------------------------------------
+                if (
+                    category ===
+                    "工程"
+                ) {
+
+                    const carbonValue =
+                        row[
+                            config
+                                .carbonIndex
+                        ];
+
+                    if (
+                        !hasValue(
+                            carbonValue
+                        ) ||
+                        String(
+                            carbonValue
+                        ).trim() ===
+                            "免計算"
+                    ) {
+                        return false;
+                    }
+                }
+
 
                 return true;
             }
@@ -13902,7 +15066,7 @@ function openViewLineMap(
         columnIndex
     ) {
 
-        const result = {};
+        const result = Object.create(null);
 
         rows.forEach(
             function(row) {
@@ -13942,7 +15106,7 @@ function openViewLineMap(
             return `
             <div class="dashboard-panel">
                 <div class="dashboard-panel-title">
-                    ${title}
+                    ${escapeAdminBudgetHtml(title)}
                 </div>
 
                 <div class="dashboard-empty">
@@ -13967,7 +15131,7 @@ function openViewLineMap(
                 function(item) {
 
                     const name =
-                        item[0];
+                        escapeAdminBudgetHtml(item[0]);
 
                     const count =
                         item[1];
@@ -14016,7 +15180,7 @@ function openViewLineMap(
         <div class="dashboard-panel">
 
             <div class="dashboard-panel-title">
-                ${title}
+                ${escapeAdminBudgetHtml(title)}
             </div>
 
             ${rowsHtml}
@@ -14063,7 +15227,7 @@ function initializeOfficeBudgetModule() {
 
 if (loginSubtitle) {
     loginSubtitle.textContent =
-        "請輸入機關或單位完整名稱及4位數登入碼";
+        "請輸入機關或單位全銜及登入碼";
 }
 
 if (loginHint) {
@@ -15115,8 +16279,39 @@ handleLoginResponse = function(
     response
 ) {
 
+    if (loginRequestTimer) {
+        clearTimeout(
+            loginRequestTimer
+        );
+
+        loginRequestTimer =
+            null;
+    }
+
+    const loginScript =
+        document.getElementById(
+            "loginJsonp"
+        );
+
+    if (loginScript) {
+        loginScript.remove();
+    }
+
     loginButton.disabled =
         false;
+
+    if (
+        response &&
+        response.success === true &&
+        (
+            response.requiresAdminPassword === true ||
+            response.requiresRiverCoastPassword === true
+        )
+    ) {
+        showAdminSecondFactor_(response);
+        return;
+    }
+
 
     if (
         !response ||
@@ -15128,7 +16323,7 @@ handleLoginResponse = function(
             response &&
             response.message
                 ? response.message
-                : "登入資料錯誤。";
+                : "機關／單位名稱或登入碼錯誤，請重新確認。";
 
         loginCode.value = "";
         loginCode.focus();
@@ -15151,33 +16346,23 @@ handleLoginResponse = function(
 };
 
 
-handleVerifySession = function(
-    response
-) {
-
-    if (
-        response &&
-        response.success === true
-    ) {
-
+// 組室帳號需要傳入 officeName；此覆寫版也必須保留 Session 待驗證保護。
+handleVerifySession = function(response) {
+    if (!verifySessionPending || getAuthToken() !== verifySessionToken) return;
+    verifySessionPending = false;
+    if (verifySessionTimer) { clearTimeout(verifySessionTimer); verifySessionTimer = null; }
+    const script = document.getElementById('verifySessionJsonp');
+    if (script) script.remove();
+    if (response && response.success === true) {
         syncAuthTokenToForms();
-
-        applyAuthScope(
-            response.role,
-            response.divisionId,
-            response.officeName
-        );
-
+        applyAuthScope(response.role, response.divisionId, response.officeName);
+        lastUserAuthActivity = Date.now();
         hideLoginGate();
+        sendAuthActivity_();
         return;
     }
-
-
     clearAuthToken();
-
-    showLoginGate(
-        "請重新登入系統。"
-    );
+    showLoginGate('登入狀態已失效，請重新登入。');
 };
 
 
@@ -15204,7 +16389,7 @@ function initializeRiverCoastBudgetModule() {
 
 if (loginSubtitle) {
     loginSubtitle.textContent =
-        "請輸入機關或單位完整名稱及4位數登入碼";
+        "請輸入機關或單位全銜及登入碼";
 }
 
 if (loginHint) {
@@ -23631,7 +24816,7 @@ clearAuthToken = function() {
     
 
 // =====================================================
-// 管理者（wrariver002 對應 admin 角色）：組室功能切換
+// 管理者登入驗證後：組室功能切換（選項由後端取得）
 //
 // 設計原則：
 // 1. 真正的登入 Session 仍保持 admin，不建立第二組登入憑證。
@@ -23644,6 +24829,195 @@ clearAuthToken = function() {
 let adminMasterAuthenticated = false;
 let adminRoleSwitchInProgress = false;
 let adminRoleSwitchValue = "admin";
+let adminRoleSwitchOptionsLoaded = false;
+let adminRoleSwitchOptionsPending = false;
+let adminRoleSwitchOptionsToken = "";
+let adminRoleSwitchOptionsTimer = null;
+let adminRoleSwitchOptionsRetryTimer = null;
+let adminRoleSwitchOptionsRequestId = "";
+let adminRoleSwitchOptionsCallbackName = "";
+let adminRoleSwitchOptionsError = "";
+let adminRoleSwitchOptionsAttempt = 0;
+let adminRoleSwitchOptionsSequence = 0;
+const ADMIN_ROLE_SWITCH_MAX_ATTEMPTS = 3; // 首次請求 + 最多兩次重試
+
+
+function cleanupAdminRoleSwitchOptionsAttempt_() {
+    if (adminRoleSwitchOptionsTimer) {
+        clearTimeout(adminRoleSwitchOptionsTimer);
+        adminRoleSwitchOptionsTimer = null;
+    }
+    const script = document.getElementById("adminRoleSwitchOptionsJsonp");
+    if (script) script.remove();
+    if (adminRoleSwitchOptionsCallbackName) {
+        delete window[adminRoleSwitchOptionsCallbackName];
+        adminRoleSwitchOptionsCallbackName = "";
+    }
+    adminRoleSwitchOptionsRequestId = "";
+}
+
+
+// 清除前一次登入所取得的選單，避免使用者登出後仍可由 DOM 讀到名單。
+function resetAdminRoleSwitchOptions_() {
+    if (adminRoleSwitchOptionsRetryTimer) {
+        clearTimeout(adminRoleSwitchOptionsRetryTimer);
+        adminRoleSwitchOptionsRetryTimer = null;
+    }
+    cleanupAdminRoleSwitchOptionsAttempt_();
+    adminRoleSwitchOptionsLoaded = false;
+    adminRoleSwitchOptionsPending = false;
+    adminRoleSwitchOptionsToken = "";
+    adminRoleSwitchOptionsAttempt = 0;
+    adminRoleSwitchOptionsError = "";
+    const select = document.getElementById("adminRoleSwitchSelect");
+    if (select) {
+        select.replaceChildren();
+        const option = document.createElement("option");
+        option.value = "admin";
+        option.textContent = "管理者／河川分署功能";
+        select.appendChild(option);
+        select.disabled = true;
+    }
+}
+
+
+function requestAdminRoleSwitchOptions_() {
+    const token = getAuthToken();
+    if (!adminMasterAuthenticated || !token || adminRoleSwitchOptionsPending ||
+        (adminRoleSwitchOptionsLoaded && adminRoleSwitchOptionsToken === token)) {
+        return;
+    }
+    resetAdminRoleSwitchOptions_();
+    adminRoleSwitchOptionsPending = true;
+    adminRoleSwitchOptionsToken = token;
+    startAdminRoleSwitchOptionsAttempt_();
+}
+
+
+function startAdminRoleSwitchOptionsAttempt_() {
+    const token = adminRoleSwitchOptionsToken;
+    if (!adminRoleSwitchOptionsPending || !adminMasterAuthenticated ||
+        !token || getAuthToken() !== token) return;
+    cleanupAdminRoleSwitchOptionsAttempt_();
+    adminRoleSwitchOptionsAttempt += 1;
+    adminRoleSwitchOptionsSequence += 1;
+    const requestId = "ars_" + Date.now().toString(36) + "_" +
+        adminRoleSwitchOptionsSequence.toString(36);
+    const callbackName = "__wraAdminRoleOptions_" +
+        adminRoleSwitchOptionsSequence.toString(36) + "_" + Date.now().toString(36);
+    adminRoleSwitchOptionsRequestId = requestId;
+    adminRoleSwitchOptionsCallbackName = callbackName;
+    adminRoleSwitchOptionsError = "";
+    syncAdminRoleSwitchBar_();
+
+    // 每一次請求使用獨立的 JSONP callback + requestId，避免舊回應污染新請求。
+    window[callbackName] = function(response) {
+        handleAdminRoleSwitchOptionsResponse_(response, requestId);
+    };
+    const script = document.createElement("script");
+    script.id = "adminRoleSwitchOptionsJsonp";
+    script.src = GAS_URL + "?action=readAdminRoleSwitchOptions&token=" +
+        encodeURIComponent(token) + "&requestId=" + encodeURIComponent(requestId) +
+        "&callback=" + encodeURIComponent(callbackName) + "&_=" + Date.now();
+    script.onerror = function() {
+        if (!adminRoleSwitchOptionsPending || adminRoleSwitchOptionsRequestId !== requestId) return;
+        handleAdminRoleSwitchOptionsFailure_("選單請求未正常完成，請稍後再試。", true);
+    };
+    document.body.appendChild(script);
+    adminRoleSwitchOptionsTimer = setTimeout(function() {
+        if (!adminRoleSwitchOptionsPending || adminRoleSwitchOptionsRequestId !== requestId) return;
+        handleAdminRoleSwitchOptionsFailure_("選單請求逾時，請稍後再試。", true);
+    }, 20000);
+}
+
+
+function handleAdminRoleSwitchOptionsFailure_(message, retryable) {
+    const token = adminRoleSwitchOptionsToken;
+    cleanupAdminRoleSwitchOptionsAttempt_();
+    if (!adminMasterAuthenticated || !token || getAuthToken() !== token) {
+        resetAdminRoleSwitchOptions_();
+        syncAdminRoleSwitchBar_();
+        return;
+    }
+    if (retryable && adminRoleSwitchOptionsAttempt < ADMIN_ROLE_SWITCH_MAX_ATTEMPTS) {
+        adminRoleSwitchOptionsRetryTimer = setTimeout(function() {
+            adminRoleSwitchOptionsRetryTimer = null;
+            startAdminRoleSwitchOptionsAttempt_();
+        }, adminRoleSwitchOptionsAttempt * 1200);
+        syncAdminRoleSwitchBar_();
+        return;
+    }
+    adminRoleSwitchOptionsPending = false;
+    adminRoleSwitchOptionsError = message || "管理者功能選項載入失敗。";
+    syncAdminRoleSwitchBar_();
+}
+
+
+function handleAdminRoleSwitchOptionsResponse_(response, requestId) {
+    if (!adminMasterAuthenticated || !adminRoleSwitchOptionsPending ||
+        !adminRoleSwitchOptionsToken || getAuthToken() !== adminRoleSwitchOptionsToken ||
+        requestId !== adminRoleSwitchOptionsRequestId) {
+        return;
+    }
+    cleanupAdminRoleSwitchOptionsAttempt_();
+    if (response && response.authRequired === true) {
+        // 真正的 Session 已失效，不能重新嘗試同一 Token。
+        clearAuthToken();
+        showLoginGate("登入狀態已失效，請重新登入。");
+        return;
+    }
+    if (response && response.responseType === "adminRoleSwitchOptions" &&
+        response.requestId === requestId && response.success === false) {
+        // 已收到後端明確拒絕，勿重試權限錯誤。
+        handleAdminRoleSwitchOptionsFailure_("目前帳號無法取得管理者功能選項。", false);
+        return;
+    }
+    if (!response || response.responseType !== "adminRoleSwitchOptions" ||
+        response.requestId !== requestId || response.success !== true ||
+        !Array.isArray(response.options)) {
+        // 包括意外收到 appendix1/data 的情況；不採用錯誤資料。
+        handleAdminRoleSwitchOptionsFailure_(
+            "管理者選單回應格式不符，請確認 Apps Script 部署版本。", true);
+        return;
+    }
+
+    const select = document.getElementById("adminRoleSwitchSelect");
+    if (!select) {
+        handleAdminRoleSwitchOptionsFailure_("找不到管理者功能選單元件。", false);
+        return;
+    }
+    select.replaceChildren();
+    let officeGroup = null;
+    const seen = new Set();
+    response.options.slice(0, 30).forEach(function(item) {
+        if (!item || typeof item.value !== "string" || typeof item.label !== "string") return;
+        const key = item.value;
+        if (seen.has(key) || !(key === "admin" || key === "riverCoast" ||
+            key === "kaopingCommittee" || key.indexOf("office:") === 0)) return;
+        seen.add(key);
+        const option = document.createElement("option");
+        option.value = key;
+        option.textContent = item.label;
+        if (item.group === "組室功能") {
+            if (!officeGroup) {
+                officeGroup = document.createElement("optgroup");
+                officeGroup.label = "組室功能";
+                select.appendChild(officeGroup);
+            }
+            officeGroup.appendChild(option);
+        } else {
+            select.insertBefore(option, select.firstChild);
+        }
+    });
+    adminRoleSwitchOptionsLoaded = seen.has("admin");
+    if (!adminRoleSwitchOptionsLoaded) {
+        handleAdminRoleSwitchOptionsFailure_("管理者功能清單不完整。", true);
+        return;
+    }
+    adminRoleSwitchOptionsPending = false;
+    adminRoleSwitchOptionsError = "";
+    syncAdminRoleSwitchBar_();
+}
 
 
 function syncAdminRoleSwitchBar_() {
@@ -23680,10 +25054,24 @@ function syncAdminRoleSwitchBar_() {
 
     bar.style.display =
         "flex";
+    select.disabled = !adminRoleSwitchOptionsLoaded;
+    select.value = adminRoleSwitchValue;
+    const retryButton = document.getElementById("adminRoleSwitchRetryButton");
+    if (retryButton) {
+        retryButton.style.display = (!adminRoleSwitchOptionsLoaded &&
+            !adminRoleSwitchOptionsPending) ? "inline-flex" : "none";
+    }
 
-    select.value =
-        adminRoleSwitchValue;
-
+    if (!adminRoleSwitchOptionsLoaded) {
+        if (status) {
+            status.textContent = adminRoleSwitchOptionsPending
+                ? (adminRoleSwitchOptionsAttempt > 1
+                    ? "正在重新載入管理者功能選項（第" + adminRoleSwitchOptionsAttempt + "次）…"
+                    : "正在載入管理者功能選項…")
+                : (adminRoleSwitchOptionsError || "管理者功能選項載入失敗。");
+        }
+        return;
+    }
 
     if (status) {
 
@@ -23729,13 +25117,16 @@ function applyAdminRoleSwitch_(
     value
 ) {
 
-    if (!adminMasterAuthenticated) {
+    if (!adminMasterAuthenticated || !adminRoleSwitchOptionsLoaded) {
         return;
     }
+    const select = document.getElementById("adminRoleSwitchSelect");
+    const target = value || "admin";
+    if (!select || !Array.from(select.options).some(function(option) {
+        return option.value === target;
+    })) return;
 
-
-    adminRoleSwitchValue =
-        value || "admin";
+    adminRoleSwitchValue = target;
 
 
     adminRoleSwitchInProgress =
@@ -23761,6 +25152,17 @@ function applyAdminRoleSwitch_(
 
             applyAuthScope(
                 "riverCoast",
+                "",
+                ""
+            );
+
+        } else if (
+            adminRoleSwitchValue ===
+            "kaopingCommittee"
+        ) {
+
+            applyAuthScope(
+                "kaopingCommittee",
                 "",
                 ""
             );
@@ -23805,15 +25207,10 @@ applyAuthScope = function(
     // 非「管理者自行切換畫面」的呼叫，
     // 視為真正登入／Session 恢復結果。
     if (!adminRoleSwitchInProgress) {
-
-        adminMasterAuthenticated =
-            role === "admin";
-
-        if (
-            adminMasterAuthenticated
-        ) {
-            adminRoleSwitchValue =
-                "admin";
+        adminMasterAuthenticated = role === "admin";
+        adminRoleSwitchValue = "admin";
+        if (!adminMasterAuthenticated || adminRoleSwitchOptionsToken !== getAuthToken()) {
+            resetAdminRoleSwitchOptions_();
         }
     }
 
@@ -23831,6 +25228,9 @@ applyAuthScope = function(
     );
 
     syncAdminRoleSwitchBar_();
+    if (!adminRoleSwitchInProgress && adminMasterAuthenticated) {
+        requestAdminRoleSwitchOptions_();
+    }
 };
 
 
@@ -23850,9 +25250,17 @@ clearAuthToken = function() {
     adminRoleSwitchValue =
         "admin";
 
+    resetAdminRoleSwitchOptions_();
     syncAdminRoleSwitchBar_();
 };
 
+
+const adminRoleSwitchRetryButton = document.getElementById("adminRoleSwitchRetryButton");
+if (adminRoleSwitchRetryButton) {
+    adminRoleSwitchRetryButton.addEventListener("click", function() {
+        requestAdminRoleSwitchOptions_();
+    });
+}
 
 const adminRoleSwitchSelect =
     document.getElementById(
@@ -23946,24 +25354,9 @@ function getCurrentTable1BudgetScopeKey_() {
 
     if (
         currentAuthRole ===
-            "division" &&
-        String(
-            currentAuthDivisionId || ""
-        ) === "7"
+        "kaopingCommittee"
     ) {
-        return "division:7";
-    }
-
-
-    if (
-        currentAuthRole ===
-            "admin" &&
-        divisionSelect &&
-        String(
-            divisionSelect.value || ""
-        ) === "7"
-    ) {
-        return "division:7";
+        return "kaopingCommittee";
     }
 
 
@@ -24151,7 +25544,9 @@ function renderTable1BudgetContextTabs_() {
             currentAuthRole ===
                 "division" ||
             currentAuthRole ===
-                "admin"
+                "admin" ||
+            currentAuthRole ===
+                "kaopingCommittee"
         ) &&
         table1Page
     ) {
@@ -24320,6 +25715,21 @@ function returnFromTable1BudgetPage_() {
 
         if (officePage) {
             officePage.classList.add(
+                "active"
+            );
+        }
+
+        return;
+    }
+
+
+    if (
+        currentAuthRole ===
+        "kaopingCommittee"
+    ) {
+
+        if (page) {
+            page.classList.add(
                 "active"
             );
         }
@@ -24863,21 +26273,8 @@ function updateTable1BudgetAccessUI_() {
 
 
     const showMainTab =
-        (
-            currentAuthRole ===
-                "division" &&
-            String(
-                currentAuthDivisionId || ""
-            ) === "7"
-        ) ||
-        (
-            currentAuthRole ===
-                "admin" &&
-            divisionSelect &&
-            String(
-                divisionSelect.value || ""
-            ) === "7"
-        );
+        currentAuthRole ===
+        "kaopingCommittee";
 
 
     if (mainTab) {
@@ -25467,6 +26864,118 @@ function updateTable1BudgetAccessUI_() {
     updateTable1BudgetAccessUI_();
 
 })();
+
+
+
+
+// =====================================================
+// 高屏溪流域管理委員會：獨立表1填報帳號
+// - 不再借用第七河川分署身分。
+// - 登入後只顯示表1。
+// - 管理者以功能切換進入時，Session仍維持admin，後端依scopeKey授權。
+// =====================================================
+
+const originalApplyAuthScopeForKaopingCommittee =
+    applyAuthScope;
+
+applyAuthScope = function(
+    role,
+    divisionId,
+    officeName
+) {
+
+    if (
+        role ===
+        "kaopingCommittee"
+    ) {
+
+        currentAuthRole =
+            "kaopingCommittee";
+
+        currentAuthDivisionId =
+            "";
+
+        if (
+            typeof currentAuthOfficeName !==
+            "undefined"
+        ) {
+            currentAuthOfficeName =
+                "";
+        }
+
+
+        const toolbar =
+            document.querySelector(
+                ".toolbar"
+            );
+
+        const pageTabs =
+            document.querySelector(
+                ".page-tabs"
+            );
+
+        if (toolbar) {
+            toolbar.style.display =
+                "none";
+        }
+
+        if (pageTabs) {
+            pageTabs.style.display =
+                "none";
+        }
+
+
+        document
+            .querySelectorAll(
+                ".page"
+            )
+            .forEach(
+                function(page) {
+                    page.classList.remove(
+                        "active"
+                    );
+                }
+            );
+
+        document
+            .querySelectorAll(
+                ".tab-button"
+            )
+            .forEach(
+                function(button) {
+                    button.classList.remove(
+                        "active"
+                    );
+                }
+            );
+
+
+        const table1Page =
+            document.getElementById(
+                "table1BudgetPage"
+            );
+
+        if (table1Page) {
+            table1Page.classList.add(
+                "active"
+            );
+        }
+
+
+        updateTable1BudgetAccessUI_();
+        renderTable1BudgetContextTabs_();
+        loadTable1BudgetData();
+
+        return;
+    }
+
+
+    originalApplyAuthScopeForKaopingCommittee(
+        role,
+        divisionId,
+        officeName
+    );
+};
 
 
 // =====================================================
