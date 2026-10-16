@@ -17310,10 +17310,170 @@ initializeRiverCoastBudgetModule();
 // =====================================================
 
 let riverCoastReviewSaving = false;
+let riverCoastReviewSavePending = null;
+let riverCoastReviewSavePollTimer = null;
+let riverCoastReviewLastSavedCount = null;
+let riverCoastReviewAwaitingReadback = null;
+let riverCoastReviewReadbackTimer = null;
 let riverCoastReviewLoaded = false;
 let riverCoastReviewRecords = [];
 const riverCoastReviewDirtyFields = new Set();
 
+
+
+// 案件審查儲存結果：只接受經後端 Session 驗證的收據。
+function riverCoastReviewSetInputsLocked_(locked) {
+    document.querySelectorAll('#riverCoastReviewBody .river-coast-review-input:not(.readonly-input), #riverCoastReviewBody .river-coast-review-textarea')
+        .forEach(function(el) { el.readOnly = !!locked; });
+}
+
+function riverCoastReviewScheduleSavePoll_(delay) {
+    if (riverCoastReviewSavePollTimer) clearTimeout(riverCoastReviewSavePollTimer);
+    riverCoastReviewSavePollTimer = setTimeout(riverCoastReviewPollSaveReceipt_, delay);
+}
+
+function riverCoastReviewFinishSave_(saved, message) {
+    const pending = riverCoastReviewSavePending;
+    riverCoastReviewSavePending = null;
+    if (riverCoastReviewSavePollTimer) clearTimeout(riverCoastReviewSavePollTimer);
+    riverCoastReviewSavePollTimer = null;
+    const status = document.getElementById('riverCoastReviewStatus');
+    if (saved && pending) {
+        // 收據僅證明後端有寫入；須回讀「原案件ID＋原工作表列」逐欄比對。
+        // 核對前不清除編輯、不覆蓋畫面，防止寫到其他案件卻誤報成功。
+        riverCoastReviewAwaitingReadback = {
+            expectedRecords: pending.records,
+            expectedCount: pending.expectedCount
+        };
+        if (status) {
+            status.className = '';
+            status.textContent = '後端已完成寫入，正在回讀確認每一筆案件...';
+        }
+        // 若 Google Apps Script 回讀請求沒有回應，也必須解除鎖定並保留輸入。
+        if (riverCoastReviewReadbackTimer) clearTimeout(riverCoastReviewReadbackTimer);
+        riverCoastReviewReadbackTimer = setTimeout(function() {
+            if (riverCoastReviewAwaitingReadback) {
+                riverCoastReviewFinishReadback_(false,
+                    '儲存後的資料核對逾時，未確認正確案件已保存；畫面輸入仍保留。');
+            }
+        }, 30000);
+        loadRiverCoastReviewCases();
+        return;
+    }
+    riverCoastReviewSaving = false;
+    riverCoastReviewSetInputsLocked_(false);
+    const saveButton = document.getElementById('riverCoastReviewSaveButton');
+    if (saveButton) saveButton.disabled = false;
+    if (status) {
+        status.className = 'error';
+        status.textContent = message;
+    }
+    // 失敗／不確定時保留全部畫面修改，不重新載入。
+}
+
+function riverCoastReviewFinishReadback_(matched, message) {
+    riverCoastReviewAwaitingReadback = null;
+    if (riverCoastReviewReadbackTimer) clearTimeout(riverCoastReviewReadbackTimer);
+    riverCoastReviewReadbackTimer = null;
+    riverCoastReviewSaving = false;
+    riverCoastReviewSetInputsLocked_(false);
+    const saveButton = document.getElementById('riverCoastReviewSaveButton');
+    if (saveButton) saveButton.disabled = false;
+    const status = document.getElementById('riverCoastReviewStatus');
+    if (status) {
+        status.className = matched ? 'success' : 'error';
+        status.textContent = message;
+    }
+    // 失敗時不重畫表格，保留正在編輯的所有內容。
+}
+
+function riverCoastReviewReadbackMatches_(expectedRecords, actualRecords) {
+    const byId = Object.create(null);
+    for (const item of (actualRecords || [])) {
+        const key = String(item.appendixType || '') + '|' + String(item.caseId || '');
+        if (Object.prototype.hasOwnProperty.call(byId, key)) return false;
+        byId[key] = item;
+    }
+    for (const expected of (expectedRecords || [])) {
+        const key = String(expected.appendixType || '') + '|' + String(expected.caseId || '');
+        const actual = byId[key];
+        if (!actual || Number(actual.sheetRow) !== Number(expected.sheetRow)) return false;
+        for (const field of ['opinion', 'approvedBudget', 'annualBudget']) {
+            if (!Object.prototype.hasOwnProperty.call(expected, field)) continue;
+            const a = String(actual[field] === undefined || actual[field] === null ? '' : actual[field]).trim();
+            const b = String(expected[field] === undefined || expected[field] === null ? '' : expected[field]).trim();
+            if (a === b) continue;
+            if (a === '' || b === '' || !Number.isFinite(Number(a)) ||
+                !Number.isFinite(Number(b)) || Math.abs(Number(a) - Number(b)) > 0.0000001) {
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
+function riverCoastReviewPollSaveReceipt_() {
+    const pending = riverCoastReviewSavePending;
+    if (!pending || !riverCoastReviewSaving) return;
+    // Apps Script 大量寫入可能耗時。逾時時絕不宣告成功。
+    if (Date.now() - pending.startedAt > 180000) {
+        riverCoastReviewFinishSave_(false,
+            '無法確認案件是否完整儲存（等待超過3分鐘）。已保留填寫內容；請先檢查 Google Sheet 再決定是否重送。');
+        return;
+    }
+    const script = document.createElement('script');
+    const callbackName = 'rcrSaveReceipt_' + pending.requestId.replace(/[^A-Za-z0-9_]/g, '');
+    const callbackId = pending.requestId;
+    let finished = false;
+    let watchdog = null;
+    const cleanup = function() {
+        if (watchdog) clearTimeout(watchdog);
+        if (script.parentNode) script.parentNode.removeChild(script);
+        try { delete window[callbackName]; } catch (_) { window[callbackName] = undefined; }
+    };
+    const retry = function() {
+        if (finished) return;
+        finished = true;
+        cleanup();
+        if (riverCoastReviewSavePending && riverCoastReviewSavePending.requestId === callbackId)
+            riverCoastReviewScheduleSavePoll_(2600);
+    };
+    window[callbackName] = function(response) {
+        if (finished) return;
+        finished = true;
+        cleanup();
+        if (!riverCoastReviewSavePending || riverCoastReviewSavePending.requestId !== callbackId) return;
+        if (response && response.authRequired) {
+            riverCoastReviewFinishSave_(false, '登入狀態已失效，無法確認儲存。已保留畫面修改，請先檢查 Google Sheet。');
+            return;
+        }
+        if (!response || response.success !== true || response.requestId !== callbackId) {
+            riverCoastReviewFinishSave_(false, '無法驗證後端儲存結果，已保留填寫內容。請確認網路及部署版本後再試。');
+            return;
+        }
+        if (response.state === 'saved') {
+            if (response.savedCount === pending.expectedCount) {
+                riverCoastReviewFinishSave_(true, '✓ 已成功儲存 ' + response.savedCount + ' 件案件，正在重新載入...');
+            } else {
+                riverCoastReviewFinishSave_(false, '後端回報的儲存件數不符，已保留填寫內容，請先檢查 Google Sheet。');
+            }
+        } else if (response.state === 'failed') {
+            riverCoastReviewFinishSave_(false,
+                '審查資料未完整儲存：' + (response.message || '後端處理失敗。') + '（已保留畫面輸入）');
+        } else if (response.state === 'processing' || response.state === 'pending') {
+            riverCoastReviewScheduleSavePoll_(2200);
+        } else {
+            riverCoastReviewFinishSave_(false, '收到無法識別的儲存結果，已保留填寫內容。');
+        }
+    };
+    script.onerror = retry;
+    watchdog = setTimeout(retry, 12000);
+    script.src = GAS_URL + '?action=readRiverCoastReviewSaveReceipt&token=' +
+        encodeURIComponent(getAuthToken()) + '&reviewRequestId=' +
+        encodeURIComponent(callbackId) + '&callback=' + encodeURIComponent(callbackName) +
+        '&_=' + Date.now();
+    document.body.appendChild(script);
+}
 
 function initializeRiverCoastReviewModule() {
 
@@ -17856,6 +18016,12 @@ function initializeRiverCoastReviewModule() {
                     name="recordsJson"
                     value="[]"
                 >
+                <input
+                    type="hidden"
+                    id="riverCoastReviewRequestId"
+                    name="reviewRequestId"
+                    value=""
+                >
 
                 <div class="river-coast-review-table-wrap">
                     <table class="river-coast-review-table">
@@ -17963,14 +18129,27 @@ function initializeRiverCoastReviewModule() {
             "submit",
             function(event) {
 
-                if (
-                    currentAuthRole !==
-                    "riverCoast"
-                ) {
+                if (currentAuthRole !== "riverCoast" || riverCoastReviewSaving) {
                     event.preventDefault();
                     return;
                 }
 
+                const idsSeen = new Set();
+                const hasDuplicateIds = riverCoastReviewRecords.some(function(item) {
+                    const key = String(item.appendixType) + '|' + String(item.caseId);
+                    if (idsSeen.has(key)) return true;
+                    idsSeen.add(key);
+                    return false;
+                });
+                if (hasDuplicateIds) {
+                    event.preventDefault();
+                    const warning = document.getElementById('riverCoastReviewStatus');
+                    if (warning) {
+                        warning.className = 'error';
+                        warning.textContent = '偵測到重複案件識別碼，已阻擋儲存以免寫入其他案件。請重新載入審查資料。';
+                    }
+                    return;
+                }
 
                 const records =
                     collectRiverCoastReviewChangedRecords();
@@ -18031,9 +18210,21 @@ function initializeRiverCoastReviewModule() {
                 }
 
 
-                riverCoastReviewSaving =
-                    true;
-
+                riverCoastReviewSaving = true;
+                const requestId = 'rcr_' + Date.now().toString(36) + '_' +
+                    Math.random().toString(36).slice(2, 14) +
+                    Math.random().toString(36).slice(2, 10);
+                document.getElementById('riverCoastReviewRequestId').value = requestId;
+                riverCoastReviewSavePending = {
+                    requestId: requestId,
+                    expectedCount: records.length,
+                    records: records.map(function(r) { return Object.assign({}, r); }),
+                    startedAt: Date.now(),
+                    attempts: 0
+                };
+                riverCoastReviewSetInputsLocked_(true);
+                // 必須由後端收據確認；iframe 載入完成並非成功證明。
+                riverCoastReviewScheduleSavePoll_(1200);
 
                 const saveButton =
                     document.getElementById(
@@ -18049,63 +18240,8 @@ function initializeRiverCoastReviewModule() {
     }
 
 
-    const frame =
-        document.getElementById(
-            "riverCoastReviewFrame"
-        );
-
-    if (frame) {
-        frame.addEventListener(
-            "load",
-            function() {
-
-                if (
-                    !riverCoastReviewSaving
-                ) {
-                    return;
-                }
-
-
-                riverCoastReviewSaving =
-                    false;
-
-
-                const saveButton =
-                    document.getElementById(
-                        "riverCoastReviewSaveButton"
-                    );
-
-                if (saveButton) {
-                    saveButton.disabled =
-                        false;
-                }
-
-
-                const status =
-                    document.getElementById(
-                        "riverCoastReviewStatus"
-                    );
-
-                if (status) {
-                    status.className =
-                        "success";
-                    status.textContent =
-                        "✓ 審查資料已送出，正在重新載入...";
-                }
-
-
-                riverCoastReviewDirtyFields.clear();
-
-
-                setTimeout(
-                    function() {
-                        loadRiverCoastReviewCases();
-                    },
-                    500
-                );
-            }
-        );
-    }
+    // 不再使用 riverCoastReviewFrame 的 load 事件判定儲存成功。
+    // 跨網域 iframe 的完成事件不能讀到 Apps Script 的 ERROR/AUTH_REQUIRED。
 
 
     [
@@ -18261,6 +18397,10 @@ function showRiverCoastSection(
 
 function confirmRiverCoastReviewDiscardIfDirty_() {
 
+    if (riverCoastReviewSaving) {
+        alert('審查資料仍在確認儲存結果，請稍候。');
+        return false;
+    }
     if (
         riverCoastReviewDirtyFields.size ===
         0
@@ -19800,13 +19940,13 @@ function collectRiverCoastReviewChangedRecords() {
                     recordKey
                 ]
             ) {
-                recordMap[
-                    recordKey
-                ] = {
-                    appendixType:
-                        appendixType,
-                    caseId:
-                        caseId
+                const original = riverCoastReviewRecords.find(function(item) {
+                    return item.appendixType === appendixType && item.caseId === caseId;
+                });
+                recordMap[recordKey] = {
+                    appendixType: appendixType,
+                    caseId: caseId,
+                    sheetRow: original ? original.sheetRow : 0
                 };
             }
 
@@ -19921,12 +20061,14 @@ function loadRiverCoastReviewCases() {
 
     script.onerror =
         function() {
-
+            if (riverCoastReviewAwaitingReadback) {
+                riverCoastReviewFinishReadback_(false,
+                    '儲存後回讀失敗，無法確認資料是否保留在正確案件；原填寫內容已保留。');
+                return;
+            }
             if (status) {
-                status.className =
-                    "error";
-                status.textContent =
-                    "案件審查資料讀取失敗，請稍後再試。";
+                status.className = "error";
+                status.textContent = "案件審查資料讀取失敗，請稍後再試。";
             }
         };
 
@@ -19937,63 +20079,42 @@ function loadRiverCoastReviewCases() {
 }
 
 
-function handleRiverCoastReviewResponse(
-    response
-) {
-
-    if (
-        handleAuthFailure(
-            response
-        )
-    ) {
-        return;
-    }
-
-
-    const status =
-        document.getElementById(
-            "riverCoastReviewStatus"
-        );
-
-
-    if (
-        !response ||
-        response.success !== true
-    ) {
-
-        riverCoastReviewLoaded =
-            false;
-
-        if (status) {
-            status.className =
-                "error";
-            status.textContent =
-                response &&
-                response.message
-                    ? response.message
-                    : "案件審查資料讀取失敗。";
+function handleRiverCoastReviewResponse(response) {
+    if (handleAuthFailure(response)) return;
+    const status = document.getElementById('riverCoastReviewStatus');
+    if (!response || response.success !== true) {
+        riverCoastReviewLoaded = false;
+        if (riverCoastReviewAwaitingReadback) {
+            riverCoastReviewFinishReadback_(false,
+                '儲存後重新讀取失敗，已保留輸入內容：' +
+                (response && response.message ? response.message : '請稍後再試。'));
+        } else if (status) {
+            status.className = 'error';
+            status.textContent = response && response.message ? response.message : '案件審查資料讀取失敗。';
         }
-
         return;
     }
-
-
-    renderRiverCoastReviewRows(
-        Array.isArray(
-            response.records
-        )
-            ? response.records
-            : []
-    );
-
-
-    riverCoastReviewLoaded =
-        true;
-
-
+    const records = Array.isArray(response.records) ? response.records : [];
+    if (riverCoastReviewAwaitingReadback) {
+        const verification = riverCoastReviewAwaitingReadback;
+        if (!riverCoastReviewReadbackMatches_(verification.expectedRecords, records)) {
+            riverCoastReviewFinishReadback_(false,
+                '儲存核對未通過：重新讀取後，原案件的資料與所填內容不一致。已保留畫面輸入，請勿誤認為成功。');
+            return;
+        }
+        renderRiverCoastReviewRows(records);
+        riverCoastReviewLoaded = true;
+        riverCoastReviewFinishReadback_(true,
+            '✓ 已成功儲存並核對 ' + verification.expectedCount + ' 件案件，資料已重新載入。');
+        return;
+    }
+    renderRiverCoastReviewRows(records);
+    riverCoastReviewLoaded = true;
     if (status) {
-        status.className = "";
-        status.textContent = "";
+        status.className = '';
+        status.textContent = response.repairedDuplicateIds > 0
+          ? '系統已修復 ' + response.repairedDuplicateIds + ' 筆重複案件識別碼；請重新填寫尚未保存的審查資料。'
+          : '';
     }
 }
 
@@ -20123,6 +20244,10 @@ clearAuthToken = function() {
 
     riverCoastReviewLoaded = false;
     riverCoastReviewSaving = false;
+    riverCoastReviewSavePending = null;
+    riverCoastReviewAwaitingReadback = null;
+    if (riverCoastReviewReadbackTimer) clearTimeout(riverCoastReviewReadbackTimer);
+    riverCoastReviewReadbackTimer = null;
     riverCoastReviewRecords = [];
     riverCoastReviewDirtyFields.clear();
 
