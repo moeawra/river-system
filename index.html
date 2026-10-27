@@ -307,6 +307,21 @@
             margin-top: 5px;
         }
 
+        /* 僅附表5：備註中的老舊防水建造物更新改善勾選項目。 */
+        .appendix5-legacy-checkbox-label {
+            display: flex !important;
+            align-items: center;
+            gap: 9px;
+            cursor: pointer;
+        }
+        .form-field .appendix5-legacy-checkbox-label input[type="checkbox"] {
+            flex: 0 0 auto;
+            width: 18px;
+            height: 18px;
+            padding: 0;
+            margin: 0;
+        }
+
         @media (max-width: 900px) {
             .content-card { margin: 15px; padding: 18px; }
             .form-grid,
@@ -1876,6 +1891,13 @@
                         <div class="form-field">
                             <label for="remarks">備註(請填列關切人員或長官交辦紀錄等)</label>
                             <textarea id="remarks" name="remarks" rows="5"></textarea>
+                        </div>
+                        <div class="form-field full appendix5-only" style="display:none;">
+                            <label class="appendix5-legacy-checkbox-label" for="appendix5OldWaterStructure">
+                                <input id="appendix5OldWaterStructure" type="checkbox">
+                                <span>本案屬老舊防水建造物更新改善</span>
+                            </label>
+                            <div class="helper-text">勾選後會自動加入上方備註；取消勾選則移除該段文字，其他備註內容保留。</div>
                         </div>
                     </div>
                 </section>
@@ -5355,6 +5377,11 @@
      * 第一次使用時建立 Leaflet.draw 編輯器。
      * 同一案件可以保留多條線，不再清除前一條。
      */
+    // MapLibre 底圖必須等繪圖視窗顯示後才建立。
+    // 編輯既有案件時 restoreLineFromGeoJSON() 也會在視窗隱藏時呼叫 initializeLineMap()，
+    // 因此不能只調整 openLineMap() 的呼叫順序。
+    let lineMapBasemapLayer = null;
+
     function initializeLineMap() {
 
         if (lineMap) {
@@ -5363,10 +5390,8 @@
 
         lineMap = L.map("lineMap").setView([23.7, 120.9], 7);
 
-        // 使用 OpenFreeMap 向量底圖，避免直接存取 OSM 公益圖磚伺服器遭 403 封鎖。
-        L.maplibreGL({
-            style: "https://tiles.openfreemap.org/styles/liberty"
-        }).addTo(lineMap);
+        // OpenFreeMap 向量底圖延後至視窗顯示且 Leaflet 完成尺寸更新後才初始化。
+        // 保留原本的底圖 URL、參考圖層、繪圖工具及 GeoJSON 儲存方式。
 
         initializeRiverManagementLayer_();
         initializeRiverLandlineLayer_();
@@ -5527,12 +5552,27 @@
             return;
         }
 
-        initializeLineMap();
         lineMapModal.classList.add("show");
+        initializeLineMap();
 
         setTimeout(function() {
 
+            // 確保已取得彈出視窗的正確尺寸；隱藏狀態建立 WebGL 底圖可能產生黑畫面。
+            if (!lineMapModal.classList.contains("show")) {
+                return;
+            }
             lineMap.invalidateSize();
+
+            if (!lineMapBasemapLayer) {
+                lineMapBasemapLayer = L.maplibreGL({
+                    style: "https://tiles.openfreemap.org/styles/liberty"
+                }).addTo(lineMap);
+            }
+            // Leaflet.invalidateSize() 不等同於 MapLibre GL 自身的 resize()。
+            const maplibreMap = lineMapBasemapLayer.getMaplibreMap();
+            if (maplibreMap) {
+                maplibreMap.resize();
+            }
 
             if (
                 drawnItems &&
@@ -6987,6 +7027,63 @@
     }
 
 
+    // 附表5：以原有「備註」欄位記錄勾選結果，不新增工作表欄位。
+    const APPENDIX5_OLD_STRUCTURE_NOTE =
+        "本案屬老舊防水建造物更新改善";
+    const appendix5OldStructureCheckbox =
+        document.getElementById("appendix5OldWaterStructure");
+    const appendix5RemarksInput =
+        document.getElementById("remarks");
+
+    function hasAppendix5OldStructureNote(value) {
+        return String(value == null ? "" : value)
+            .split(/\r?\n/)
+            .some(function(line) {
+                return line.trim() === APPENDIX5_OLD_STRUCTURE_NOTE;
+            });
+    }
+
+    function syncAppendix5OldStructureCheckbox() {
+        if (!appendix5OldStructureCheckbox || !appendix5RemarksInput) return;
+        appendix5OldStructureCheckbox.checked =
+            getCurrentAppendixType() === "appendix5" &&
+            hasAppendix5OldStructureNote(appendix5RemarksInput.value);
+    }
+
+    function applyAppendix5OldStructureCheckbox() {
+        if (!appendix5OldStructureCheckbox || !appendix5RemarksInput ||
+            getCurrentAppendixType() !== "appendix5") return;
+
+        const remarks = appendix5RemarksInput.value.replace(/\r\n/g, "\n");
+        if (appendix5OldStructureCheckbox.checked) {
+            if (!hasAppendix5OldStructureNote(remarks)) {
+                const existing = remarks.replace(/\s+$/, "");
+                appendix5RemarksInput.value = existing
+                    ? existing + "\n" + APPENDIX5_OLD_STRUCTURE_NOTE
+                    : APPENDIX5_OLD_STRUCTURE_NOTE;
+            }
+        } else {
+            // 僅移除完全相同的獨立備註行，不刪除使用者其他文字。
+            appendix5RemarksInput.value = remarks
+                .split("\n")
+                .filter(function(line) {
+                    return line.trim() !== APPENDIX5_OLD_STRUCTURE_NOTE;
+                })
+                .join("\n");
+        }
+    }
+
+    if (appendix5OldStructureCheckbox) {
+        appendix5OldStructureCheckbox.addEventListener(
+            "change", applyAppendix5OldStructureCheckbox
+        );
+    }
+    if (appendix5RemarksInput) {
+        appendix5RemarksInput.addEventListener(
+            "input", syncAppendix5OldStructureCheckbox
+        );
+    }
+
     function updateAppendixForm() {
 
         const appendixType =
@@ -7339,6 +7436,9 @@
             }
         );
 
+
+        // 附表5以備註文字判斷勾選狀態；附表1～4不顯示該選項。
+        syncAppendix5OldStructureCheckbox();
 
         // 切換附表後清除專用欄位的紅框。
         [
@@ -8106,6 +8206,8 @@
             setFieldValue("remarks", row[36]);
         }
 
+        // 回填附表5舊案時，依 AK 備註內是否有指定獨立文字行還原勾選。
+        syncAppendix5OldStructureCheckbox();
 
         updateTotalFunding();
 
@@ -8587,6 +8689,13 @@
 
             updateCoordinateFromLines();
 
+
+            // 附表5的勾選結果直接寫回既有備註欄（AK），不更動後端參數。
+            if (getCurrentAppendixType() === "appendix5" &&
+                appendix5OldStructureCheckbox &&
+                appendix5OldStructureCheckbox.checked) {
+                applyAppendix5OldStructureCheckbox();
+            }
 
             // --------------------------------
             // 3. 完整性檢查
@@ -18958,9 +19067,6 @@ function createRiverCoastReviewDetailPanel_(
 
     hint.className =
         "river-coast-review-detail-hint";
-
-    hint.textContent =
-        "依 Excel 附表欄位群組呈現；分署、項次、類別、案件名稱及經費需求已於上方顯示，這裡不重複。";
 
     wrapper.appendChild(
         hint
