@@ -1236,6 +1236,70 @@
     }
 }
 
+        .admin-login-control-open {
+            margin-left:auto; padding:9px 12px; border:1px solid #6d97a8;
+            background:#fff; color:#164457; border-radius:4px; font-weight:700;
+            font-family:inherit; cursor:pointer; white-space:nowrap;
+        }
+        .admin-login-control-open:hover { background:#e6f3f6; }
+        .general-login-control-modal[hidden] { display:none !important; }
+        .general-login-control-modal {
+            position:fixed; inset:0; z-index:49000; display:flex;
+            align-items:center; justify-content:center; padding:18px;
+            background:rgba(10,30,45,.6);
+        }
+        .general-login-control-panel {
+            width:min(630px,96vw); max-height:90vh; overflow:auto;
+            background:#fff; color:#233b49; border-radius:8px;
+            box-shadow:0 14px 35px rgba(0,0,0,.25);
+        }
+        .general-login-control-header {
+            display:flex; justify-content:space-between; align-items:center;
+            gap:12px; padding:15px 20px; background:#e6f0f4;
+        }
+        .general-login-control-header h2 { margin:0; font-size:19px; }
+        #generalLoginControlClose { border:0; background:none; cursor:pointer; font-size:28px; }
+        .general-login-control-content { padding:18px 22px 22px; }
+        .general-login-control-note { line-height:1.7; color:#506372; font-size:13px; }
+        .general-login-control-current { font-weight:700; font-size:16px; color:#1a6479; }
+        #generalLoginControlFields { border:1px solid #ccd7df; border-radius:6px; padding:12px 15px; }
+        #generalLoginControlFields legend { font-weight:700; }
+        #generalLoginControlFields label { display:block; margin:10px 0; line-height:1.5; }
+        #generalLoginControlFields input[type=checkbox],
+        #generalLoginControlFields input[type=radio] { margin-right:8px; accent-color:#197d83; }
+        .general-login-control-schedule { border-top:1px solid #dae2e7; margin-top:14px; padding-top:8px; }
+        #generalLoginDeadlineDate { padding:8px 10px; border:1px solid #b2c1ca; max-width:230px; width:100%; }
+        .general-login-control-message { min-height:20px; line-height:1.6; font-size:14px; color:#bb4d16; }
+        .general-login-control-actions { display:flex; justify-content:flex-end; gap:10px; flex-wrap:wrap; }
+        @media(max-width:760px) { .admin-login-control-open { margin-left:0; width:100%; } }
+
+
+        /* 管理者案件名稱建議管理：僅開啟管理視窗時顯示。 */
+        .admin-case-template-open { padding:9px 12px;border:1px solid #6d97a8;background:#fff;color:#164457;border-radius:4px;font-weight:700;font-family:inherit;cursor:pointer;white-space:nowrap; }
+        .admin-case-template-open:hover { background:#e6f3f6; }
+        .case-template-modal[hidden] { display:none !important; }
+        .case-template-modal { position:fixed;inset:0;z-index:49020;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(10,30,45,.65); }
+        .case-template-panel { width:min(920px,98vw);max-height:92vh;overflow:auto;background:white;color:#173042;border-radius:8px;box-shadow:0 14px 38px rgba(0,0,0,.26); }
+        .case-template-heading { padding:16px 20px;background:#e6f0f4;display:flex;justify-content:space-between;align-items:center;gap:12px; }
+        .case-template-heading h2 { margin:0;font-size:19px; }
+        .case-template-heading button { border:0;background:transparent;font-size:26px;cursor:pointer; }
+        .case-template-body { padding:18px 22px; }
+        .case-template-note { font-size:13px;color:#526875;line-height:1.7;margin:4px 0 14px; }
+        .case-template-form { display:grid;grid-template-columns:1fr 1fr 110px;gap:10px 14px;margin-bottom:12px; }
+        .case-template-form label { display:block;font-size:13px;font-weight:700;margin-bottom:5px; }
+        .case-template-form select,.case-template-form input { width:100%;padding:9px;border:1px solid #a8bbc5;background:#fff;font-size:14px;font-family:inherit; }
+        .case-template-pattern { grid-column:1/-1; }
+        .case-template-actions { display:flex;gap:9px;flex-wrap:wrap;justify-content:flex-end;margin:10px 0 18px; }
+        .case-template-table-wrap { overflow:auto;max-height:330px;border:1px solid #d0dce2; }
+        .case-template-table { border-collapse:collapse;width:100%;font-size:13px;min-width:600px; }
+        .case-template-table th,.case-template-table td { border-bottom:1px solid #e1e7eb;padding:9px 10px;text-align:left;vertical-align:top; }
+        .case-template-table th { position:sticky;top:0;background:#edf4f7;z-index:1; }
+        .case-template-table td:nth-child(2) { word-break:break-word;min-width:240px; }
+        .case-template-table button { margin:2px 4px 2px 0;border:1px solid #a1b6c2;background:#fff;cursor:pointer;padding:4px 7px;color:#163e50;border-radius:3px;font-family:inherit; }
+        .case-template-table button:hover { background:#e8f2f6; }
+        .case-template-message { min-height:22px;font-size:13px;color:#a04a20; }
+        @media (max-width:700px) { .case-template-form { grid-template-columns:1fr; }.case-template-pattern { grid-column:auto; }.case-template-body { padding:14px; } }
+
         .river-coast-review-conclusion-head {
             background: #dce9cf !important;
             color: #294332;
@@ -1338,6 +1402,63 @@
         </span>
         <button type="button" id="adminRoleSwitchRetryButton" class="admin-role-switch-retry"
                 style="display:none;">重新載入選單</button>
+        <button type="button" id="generalLoginControlOpen" class="admin-login-control-open">🔐 帳號登入管理</button>
+        <button type="button" id="caseTemplateAdminOpen" class="admin-case-template-open">📝 案件名稱建議管理</button>
+    </div>
+
+    <!-- 僅管理者登入時能開啟；所有設定以 Apps Script 的 admin Session 審核。 -->
+    <div id="generalLoginControlModal" class="general-login-control-modal" hidden>
+        <section class="general-login-control-panel" role="dialog" aria-modal="true" aria-labelledby="generalLoginControlTitle">
+            <header class="general-login-control-header">
+                <h2 id="generalLoginControlTitle">帳號登入與填報期限管理</h2>
+                <button type="button" id="generalLoginControlClose" aria-label="關閉管理視窗">×</button>
+            </header>
+            <div class="general-login-control-content">
+                <p class="general-login-control-note">僅管制河川分署、一般組室及高屏溪流域管理委員會。<strong>管理者與河川海岸組不受限制</strong>，仍可登入及辦理案件審查。</p>
+                <p id="generalLoginControlCurrent" class="general-login-control-current">正在讀取系統設定…</p>
+                <fieldset id="generalLoginControlFields" disabled>
+                    <legend>一般帳號登入狀態</legend>
+                    <label><input type="radio" name="generalLoginManual" value="false" checked> 開放一般帳號登入與填報</label>
+                    <label><input type="radio" name="generalLoginManual" value="true"> 立即關閉一般帳號登入與填報</label>
+                    <div class="general-login-control-schedule">
+                        <label><input type="checkbox" id="generalLoginAutoEnabled"> 啟用截止日結束後自動關閉</label>
+                        <label for="generalLoginDeadlineDate">填報截止日期（臺灣時間，當日23:59:59止）</label>
+                        <input id="generalLoginDeadlineDate" type="date" min="2020-01-01" max="2100-12-31" disabled>
+                    </div>
+                </fieldset>
+                <p class="general-login-control-note">關閉後，一般帳號既有的登入憑證也會失效；重新開放後必須重新登入。若截止日期已過，請取消自動截止或改為未來日期，才能重新開放。</p>
+                <p id="generalLoginControlMessage" class="general-login-control-message" role="status"></p>
+                <div class="general-login-control-actions">
+                    <button type="button" id="generalLoginControlReload" class="secondary-button">重新載入設定</button>
+                    <button type="button" id="generalLoginControlSave" class="primary-button" disabled>儲存設定</button>
+                </div>
+            </div>
+        </section>
+    </div>
+
+
+    <!-- 案件名稱範本管理：管理者可以新增、修改、停用、刪除及調整顯示順序。 -->
+    <div id="caseTemplateAdminModal" class="case-template-modal" hidden>
+      <section class="case-template-panel" role="dialog" aria-modal="true" aria-labelledby="caseTemplateAdminTitle">
+        <header class="case-template-heading"><h2 id="caseTemplateAdminTitle">案件名稱建議管理</h2><button type="button" id="caseTemplateAdminClose" aria-label="關閉">×</button></header>
+        <div class="case-template-body">
+          <div class="case-template-form">
+            <div><label for="caseTemplateAppendix">適用附表／清單篩選</label><select id="caseTemplateAppendix"><option value="appendix1">附表1－中央管河川整體改善</option><option value="appendix2">附表2－中央管區排整體改善</option><option value="appendix3">附表3－土地調適改善措施</option><option value="appendix4">附表4－整體環境改善</option><option value="appendix5">附表5－構造物維修改善工程</option></select></div>
+            <div><label for="caseTemplateCategory">案件類別</label><select id="caseTemplateCategory"></select></div>
+            <div><label for="caseTemplateOrder">排序序號</label><input id="caseTemplateOrder" type="number" min="1" max="9999" step="1" value="1"></div>
+            <div class="case-template-pattern"><label for="caseTemplatePattern">建議名稱範本</label><input id="caseTemplatePattern" type="text" maxlength="160" placeholder="例如：{排水名稱}0K+000~0K+000護岸改善工程"></div>
+          </div>
+          <p id="caseTemplatePreview" class="case-template-note">請選擇附表、類別及輸入名稱範本。</p>
+          <div class="case-template-actions">
+            <button type="button" id="caseTemplateReload" class="secondary-button">重新載入</button>
+            <button type="button" id="caseTemplateCancelEdit" class="secondary-button" hidden>取消編輯</button>
+            <button type="button" id="caseTemplateSave" class="primary-button">新增建議名稱</button>
+          </div>
+          <p id="caseTemplateMessage" class="case-template-message" role="status"></p>
+          <h3>目前建議名稱清單</h3>
+          <div class="case-template-table-wrap"><table class="case-template-table"><thead><tr><th>類別／排序</th><th>建議名稱範本</th><th>狀態</th><th>管理</th></tr></thead><tbody id="caseTemplateAdminRows"><tr><td colspan="4">尚未載入資料</td></tr></tbody></table></div>
+        </div>
+      </section>
     </div>
 
     <div class="toolbar">
@@ -1686,9 +1807,10 @@
                                 name="caseName"
                                 type="text"
                                 autocomplete="off"
-                                placeholder="可直接輸入，附表1亦可從建議名稱選擇"
+                                placeholder="可直接輸入，亦可從建議名稱選擇"
                             >
                             <datalist id="appendix1CaseNameSuggestions"></datalist>
+                            <div id="caseNameTemplateLoadStatus" class="helper-text" role="status" aria-live="polite" style="display:none;"></div>
                             <div
                                 id="appendix1CaseNameHelperText"
                                 class="helper-text"
@@ -3367,6 +3489,16 @@
         document.getElementById("caseNameHelperNote2");
 
 
+    // 後端「案件名稱建議設定」是唯一顯示來源；載入前不呈現舊版內建範例。
+    let caseNameTemplateCache_ = null;
+    let caseNameTemplateLoadError_ = '';
+    const caseNameTemplateLoadStatus_ = document.getElementById('caseNameTemplateLoadStatus');
+    let caseNameTemplateCacheToken_ = '';
+    let caseNameTemplateCacheAt_ = 0;
+    let caseNameTemplatePending_ = false;
+    let caseNameTemplateRequest_ = null;
+    let caseNameTemplateSeq_ = 0;
+
     function getAppendix1CaseNameTemplates_() {
 
         const creek =
@@ -3432,32 +3564,51 @@
 
     // 附表2～4使用承辦提供的原文範例；附表5暫無範例。
     // 附表1原有的溪別帶入方式保持不變。
+    function caseNameCurrentLocationNames_(appendixType) {
+        const selected = function(id) {
+            const el = document.getElementById(id);
+            return el ? String(el.value || '').trim() : '';
+        };
+        const flow = selected('flowCategory');
+        let creek = '', drainage = '', coast = '';
+        if (appendixType === 'appendix1') creek = selected('creek');
+        if (appendixType === 'appendix2') drainage = selected('drainageName');
+        if (appendixType === 'appendix3') coast = selected('coastName');
+        if (appendixType === 'appendix4' || appendixType === 'appendix5') {
+            creek = flow === '河川' ? selected('appendix4Creek') : '';
+            drainage = flow === '區排' ? selected('appendix4DrainageName') : '';
+            coast = flow === '海岸' ? selected('appendix4CoastName') : '';
+        }
+        return {
+            creek:creek || '○○溪', drainage:drainage || '○○排水', coast:coast || '○○海岸',
+            target:creek || drainage || coast || (flow === '區排' ? '○○排水' : flow === '海岸' ? '○○海岸' : '○○溪')
+        };
+    }
+
+    function expandCaseNamePattern_(pattern, appendixType) {
+        const names = caseNameCurrentLocationNames_(appendixType);
+        return String(pattern || '').replace(/\{(溪別|排水名稱|海岸名稱|標的名稱)\}/g, function(_,field) {
+            if (field === '溪別') return names.creek;
+            if (field === '排水名稱') return names.drainage;
+            if (field === '海岸名稱') return names.coast;
+            return names.target;
+        });
+    }
+
     function getCaseNameTemplatesByAppendix_(appendixType) {
-        if (appendixType === "appendix1") {
-            return getAppendix1CaseNameTemplates_();
-        }
-        if (appendixType === "appendix2") {
-            return [
-                { category: "委託測設監造", value: "○○排水0K+000~0K+000工程委託規劃設計技術服務" },
-                { category: "用地先期", value: "○○排水0K+000~0K+000工程用地先期作業" },
-                { category: "用地取得", value: "○○排水0K+000~0K+000工程用地取得" },
-                { category: "工程", value: "○○排水0K+000~0K+000工程" },
-                { category: "橋梁改建", value: "○○排水○橋梁改建工程" }
-            ];
-        }
-        if (appendixType === "appendix3") {
-            return [
-                { category: "工程", value: "○○海岸防護工程" },
-                { category: "逕流分擔", value: "○○逕流分擔設施工程" }
-            ];
-        }
-        if (appendixType === "appendix4") {
-            return [
-                { category: "工程", value: "○○溪○○堤防(護岸)環境營造工程" },
-                { category: "工程", value: "○○海堤環境營造工程" }
-            ];
-        }
-        return [];
+        // 未取得本次登入者的正式清單、重新載入中或讀取失敗時，禁止顯示舊範本。
+        if (!Array.isArray(caseNameTemplateCache_) ||
+            caseNameTemplateCacheToken_ !== getAuthToken() ||
+            caseNameTemplatePending_ || caseNameTemplateLoadError_) return [];
+        return caseNameTemplateCache_.filter(function(item) {
+            return item.appendixType === appendixType && item.enabled !== false;
+        }).map(function(item) {
+            return {
+                category:item.category,
+                value:expandCaseNamePattern_(item.pattern,appendixType),
+                order:Number(item.order)||9999
+            };
+        });
     }
 
 
@@ -3475,9 +3626,9 @@
             getCurrentAppendixType();
 
 
-        // 附表1～4提供案件名稱建議，附表5暫不提供。
+        // 附表1～5均可由管理者維護建議名稱（附表5初始清單為空）。
         const hasSuggestions = [
-            "appendix1", "appendix2", "appendix3", "appendix4"
+            "appendix1", "appendix2", "appendix3", "appendix4", "appendix5"
         ].indexOf(appendixType) !== -1;
 
         if (!hasSuggestions) {
@@ -3490,10 +3641,8 @@
             return;
         }
 
-        caseNameInput.setAttribute("list", "appendix1CaseNameSuggestions");
-        caseNameInput.placeholder = appendixType === "appendix1"
-            ? "可直接輸入，附表1亦可從建議名稱選擇"
-            : "可直接輸入，亦可從建議名稱選擇";
+        // 後端清單未載入完成時不連結 datalist，仍允許使用者手動輸入名稱。
+        caseNameInput.placeholder = "可直接輸入，亦可從建議名稱選擇";
 
         if (appendix1CaseNameHelperText) {
             appendix1CaseNameHelperText.style.display = "";
@@ -3521,9 +3670,35 @@
             ).trim();
 
 
-        const templates =
-            getCaseNameTemplatesByAppendix_(appendixType);
+        const templateAllowed = !!getAuthToken() &&
+            (currentAuthRole === 'division' || currentAuthRole === 'admin');
+        if (templateAllowed) loadCaseNameTemplatesFromServer_(false);
 
+        const templates = templateAllowed ? getCaseNameTemplatesByAppendix_(appendixType).map(function(item) {
+            return {
+                category:item.category, order:Number(item.order)||9999,
+                value:expandCaseNamePattern_(item.value,appendixType)
+            };
+        }) : [];
+
+        // 只有取得正式範本資料後才啟用下拉選單；空清單不顯示下拉箭頭。
+        if (templates.length) {
+            caseNameInput.setAttribute("list", "appendix1CaseNameSuggestions");
+        } else {
+            caseNameInput.removeAttribute("list");
+        }
+        if (caseNameTemplateLoadStatus_) {
+            let status = '';
+            if (templateAllowed && caseNameTemplatePending_) {
+                status = '正在載入最新建議名稱…（仍可自行輸入案件名稱）';
+            } else if (templateAllowed && caseNameTemplateLoadError_) {
+                status = '建議名稱載入失敗，請重新選擇附表或點選案件名稱欄位重試；仍可自行輸入。';
+            } else if (templateAllowed && Array.isArray(caseNameTemplateCache_) && !templates.length) {
+                status = '本附表目前沒有啟用的建議名稱，可自行輸入。';
+            }
+            caseNameTemplateLoadStatus_.textContent = status;
+            caseNameTemplateLoadStatus_.style.display = status ? '' : 'none';
+        }
 
         // 已選類別時，優先排列相同類別的建議名稱，
         // 但仍保留該附表的所有範例，供使用者選擇。
@@ -3544,10 +3719,7 @@
                         ? 0
                         : 1;
 
-                return (
-                    aPriority -
-                    bPriority
-                );
+                return (aPriority - bPriority) || (a.order - b.order);
             }
         );
 
@@ -27342,6 +27514,454 @@ if (table1AdminRoleSwitchSelectSafe_) {
         );
 }
 
+
+
+// =====================================================
+// 管理者：全體一般帳號登入與填報期限管理（河川海岸組例外）
+// 與後端 readGeneralLoginControl / saveGeneralLoginControl 同步。
+// =====================================================
+const generalLoginModal_ = document.getElementById('generalLoginControlModal');
+const generalLoginOpen_ = document.getElementById('generalLoginControlOpen');
+const generalLoginClose_ = document.getElementById('generalLoginControlClose');
+const generalLoginFields_ = document.getElementById('generalLoginControlFields');
+const generalLoginAuto_ = document.getElementById('generalLoginAutoEnabled');
+const generalLoginDate_ = document.getElementById('generalLoginDeadlineDate');
+const generalLoginCurrent_ = document.getElementById('generalLoginControlCurrent');
+const generalLoginMessage_ = document.getElementById('generalLoginControlMessage');
+const generalLoginSave_ = document.getElementById('generalLoginControlSave');
+const generalLoginReload_ = document.getElementById('generalLoginControlReload');
+let generalLoginRevision_ = null;
+let generalLoginRequest_ = null;
+let generalLoginSequence_ = 0;
+
+function resetGeneralLoginControlUi_() {
+    if (generalLoginRequest_) {
+        clearTimeout(generalLoginRequest_.timer);
+        if (generalLoginRequest_.script) generalLoginRequest_.script.remove();
+        delete window[generalLoginRequest_.callback];
+        generalLoginRequest_ = null;
+    }
+    generalLoginRevision_ = null;
+    generalLoginFields_.disabled = true;
+    generalLoginSave_.disabled = true;
+    generalLoginCurrent_.textContent = '尚未載入設定';
+    generalLoginMessage_.textContent = '';
+    generalLoginModal_.hidden = true;
+}
+
+function populateGeneralLoginControl_(control) {
+    if (!control || typeof control.revision !== 'number') return;
+    generalLoginRevision_ = control.revision;
+    const radio = document.querySelector('input[name="generalLoginManual"][value="' +
+        String(control.manualClosed === true) + '"]');
+    if (radio) radio.checked = true;
+    generalLoginAuto_.checked = control.autoEnabled === true;
+    generalLoginDate_.value = control.deadlineDate || '';
+    generalLoginDate_.disabled = !generalLoginAuto_.checked;
+    generalLoginFields_.disabled = false;
+    generalLoginSave_.disabled = false;
+    const reason = control.manualClosed ? '手動關閉' :
+        (control.deadlineClosed ? '已達自動截止期限' : '開放中');
+    generalLoginCurrent_.textContent = '目前一般帳號：' + reason +
+        '（管理者及河川海岸組維持正常）';
+}
+
+function generalLoginControlRequest_(action, values) {
+    const token = getAuthToken();
+    if (!adminMasterAuthenticated || !token || generalLoginRequest_) return;
+    generalLoginSequence_ += 1;
+    const requestId = 'glc_' + Date.now().toString(36) + '_' + generalLoginSequence_;
+    const callback = '__riverGeneralLoginControl_' + generalLoginSequence_ + '_' + Date.now().toString(36);
+    const params = new URLSearchParams({ action:action, token:token, requestId:requestId,
+        callback:callback, _:String(Date.now()) });
+    Object.keys(values || {}).forEach(function(key) { params.set(key, values[key]); });
+    generalLoginMessage_.textContent = action === 'saveGeneralLoginControl' ? '正在儲存設定…' : '正在讀取設定…';
+    generalLoginFields_.disabled = true;
+    generalLoginSave_.disabled = true;
+    generalLoginReload_.disabled = true;
+    const script = document.createElement('script');
+    script.id = 'generalLoginControlJsonp';
+    script.src = GAS_URL + '?' + params.toString();
+    function finish(response, errorText) {
+        if (!generalLoginRequest_ || generalLoginRequest_.requestId !== requestId) return;
+        clearTimeout(generalLoginRequest_.timer);
+        script.remove();
+        delete window[callback];
+        generalLoginRequest_ = null;
+        generalLoginReload_.disabled = false;
+        if (!adminMasterAuthenticated || getAuthToken() !== token) return;
+        if (response && response.authRequired === true) {
+            resetGeneralLoginControlUi_();
+            clearAuthToken();
+            showLoginGate('管理者登入已失效，請重新登入。');
+            return;
+        }
+        if (!response || response.responseType !== 'generalLoginControl' ||
+            response.requestId !== requestId || response.success !== true || !response.control) {
+            generalLoginFields_.disabled = generalLoginRevision_ === null;
+            generalLoginSave_.disabled = generalLoginRevision_ === null;
+            generalLoginMessage_.textContent = errorText ||
+                (response && response.message ? response.message : '登入管制設定未完成，請重新載入。');
+            return;
+        }
+        populateGeneralLoginControl_(response.control);
+        generalLoginMessage_.textContent = action === 'saveGeneralLoginControl'
+            ? '設定已儲存。一般帳號權限已由後端立即生效。' : '';
+    }
+    window[callback] = function(response) { finish(response, ''); };
+    script.onerror = function() { finish(null, '無法連線到 Apps Script，請確認部署版本後重試。'); };
+    generalLoginRequest_ = {requestId:requestId, callback:callback, script:script, timer:null};
+    document.body.appendChild(script);
+    generalLoginRequest_.timer = setTimeout(function() {
+        finish(null, '連線逾時；若剛才有儲存，請先重新載入確認結果，避免重複操作。');
+    }, 20000);
+}
+
+function openGeneralLoginControl_() {
+    if (!adminMasterAuthenticated || !getAuthToken()) return;
+    generalLoginModal_.hidden = false;
+    generalLoginMessage_.textContent = '';
+    generalLoginControlRequest_('readGeneralLoginControl', {});
+}
+
+generalLoginOpen_.addEventListener('click', openGeneralLoginControl_);
+generalLoginClose_.addEventListener('click', function() { generalLoginModal_.hidden = true; });
+generalLoginModal_.addEventListener('click', function(event) {
+    if (event.target === generalLoginModal_) generalLoginModal_.hidden = true;
+});
+document.addEventListener('keydown', function(event) {
+    if (event.key === 'Escape' && !generalLoginModal_.hidden) generalLoginModal_.hidden = true;
+});
+generalLoginAuto_.addEventListener('change', function() {
+    generalLoginDate_.disabled = !generalLoginAuto_.checked;
+});
+generalLoginReload_.addEventListener('click', function() {
+    if (!generalLoginRequest_) generalLoginControlRequest_('readGeneralLoginControl', {});
+});
+generalLoginSave_.addEventListener('click', function() {
+    if (!adminMasterAuthenticated || generalLoginRevision_ === null || generalLoginRequest_) return;
+    const selected = document.querySelector('input[name="generalLoginManual"]:checked');
+    const manualClosed = !!(selected && selected.value === 'true');
+    const autoEnabled = generalLoginAuto_.checked;
+    const deadlineDate = generalLoginDate_.value;
+    if (autoEnabled && (!/^\d{4}-\d{2}-\d{2}$/.test(deadlineDate))) {
+        generalLoginMessage_.textContent = '請選擇有效的填報截止日期。';
+        return;
+    }
+    const confirmText = manualClosed
+        ? '確定立即關閉所有一般帳號嗎？分署、組室及高屏溪委員會的現有登入憑證將失效；河川海岸組仍可繼續審查。'
+        : '確定儲存一般帳號開放與截止設定嗎？若截止日期已過，自動關閉仍會生效。若關閉或重新開放，既有一般帳號需重新登入。';
+    if (!window.confirm(confirmText)) return;
+    generalLoginControlRequest_('saveGeneralLoginControl', {
+        manualClosed:String(manualClosed), autoEnabled:String(autoEnabled),
+        deadlineDate:deadlineDate, expectedRevision:String(generalLoginRevision_)
+    });
+});
+
+// 清除管理者憑證時也關閉管制視窗，不留下可操作的設定介面。
+const originalClearAuthTokenForGeneralLoginControl_ = clearAuthToken;
+clearAuthToken = function() {
+    originalClearAuthTokenForGeneralLoginControl_();
+    resetGeneralLoginControlUi_();
+};
+
+
+// ================================================================
+// 附表1～5案件名稱範本：從 Apps Script 取得最新啟用清單。
+// 與管理者專屬新增／編輯／停用／刪除視窗共用資料來源。
+// ================================================================
+const caseTemplateModal_ = document.getElementById('caseTemplateAdminModal');
+const caseTemplateOpen_ = document.getElementById('caseTemplateAdminOpen');
+const caseTemplateAppendix_ = document.getElementById('caseTemplateAppendix');
+const caseTemplateCategory_ = document.getElementById('caseTemplateCategory');
+const caseTemplateOrder_ = document.getElementById('caseTemplateOrder');
+const caseTemplatePattern_ = document.getElementById('caseTemplatePattern');
+const caseTemplatePreview_ = document.getElementById('caseTemplatePreview');
+const caseTemplateMessage_ = document.getElementById('caseTemplateMessage');
+const caseTemplateRows_ = document.getElementById('caseTemplateAdminRows');
+const caseTemplateSave_ = document.getElementById('caseTemplateSave');
+const caseTemplateCancelEdit_ = document.getElementById('caseTemplateCancelEdit');
+const caseTemplateReload_ = document.getElementById('caseTemplateReload');
+let caseTemplateEditingId_ = '';
+const caseTemplateCategories_ = {
+    appendix1:['工程','用地先期','用地取得','委託測設監造','橋梁改建'],
+    appendix2:['工程','用地先期','用地取得','委託測設監造','橋梁改建'],
+    appendix3:['工程','用地先期','用地取得','委託測設監造','逕流分擔'],
+    appendix4:['工程','用地先期','用地取得','委託測設監造'],
+    appendix5:['工程','用地先期','用地取得','委託測設監造']
+};
+
+function loadCaseNameTemplatesFromServer_(force) {
+    const token = getAuthToken();
+    if (!token || (currentAuthRole !== 'division' && currentAuthRole !== 'admin' && !adminMasterAuthenticated)) return;
+    if (caseNameTemplateCacheToken_ !== token) {
+        caseNameTemplateCacheToken_ = token;
+        caseNameTemplateCache_ = null;
+        caseNameTemplateCacheAt_ = 0;
+        caseNameTemplateLoadError_ = '';
+    }
+    if (caseNameTemplateRequest_ || caseNameTemplatePending_ ||
+        (!force && (caseNameTemplateLoadError_ ||
+        (Array.isArray(caseNameTemplateCache_) && Date.now() - caseNameTemplateCacheAt_ < 60000)))) return;
+    caseNameTemplateSeq_ += 1;
+    const requestId = 'cnt_' + Date.now().toString(36) + '_' + caseNameTemplateSeq_;
+    const callback = '__riverCaseNameTemplates_' + Date.now().toString(36) + '_' + caseNameTemplateSeq_;
+    const params = new URLSearchParams({action:'readCaseNameTemplates',token:token,
+        requestId:requestId,callback:callback,_:String(Date.now())});
+    caseNameTemplatePending_ = true;
+    caseNameTemplateLoadError_ = '';
+    // 強制更新時先移除下拉選單舊內容，待讀取成功後一次顯示最新排序。
+    updateAppendix1CaseNameSuggestions();
+    if (adminMasterAuthenticated && !caseTemplateModal_.hidden) {
+        caseTemplateSave_.disabled = true;
+        caseTemplateReload_.disabled = true;
+        caseTemplateMessage_.textContent = '正在讀取最新建議名稱…';
+    }
+    const script = document.createElement('script');
+    script.src = GAS_URL + '?' + params.toString();
+    function finish(response,message) {
+        if (!caseNameTemplateRequest_ || caseNameTemplateRequest_.requestId !== requestId) return;
+        clearTimeout(caseNameTemplateRequest_.timer);
+        script.remove();
+        delete window[callback];
+        caseNameTemplateRequest_ = null;
+        caseNameTemplatePending_ = false;
+        if (adminMasterAuthenticated && !caseTemplateModal_.hidden) {
+            caseTemplateReload_.disabled = false;
+            caseTemplateSave_.disabled = !(response && response.success === true && Array.isArray(response.templates));
+        }
+        if (getAuthToken() !== token) return;
+        if (response && response.responseType === 'caseNameTemplates' &&
+            response.requestId === requestId && response.success === true &&
+            Array.isArray(response.templates)) {
+            caseNameTemplateCache_ = response.templates;
+            caseNameTemplateCacheAt_ = Date.now();
+            caseNameTemplateLoadError_ = '';
+            if (adminMasterAuthenticated && !caseTemplateModal_.hidden) {
+                renderCaseTemplateRows_();
+                caseTemplateMessage_.textContent = '';
+            }
+        } else {
+            caseNameTemplateLoadError_ = (response && response.message) || message || '無法讀取建議名稱設定。';
+            if (adminMasterAuthenticated && !caseTemplateModal_.hidden) {
+                caseTemplateMessage_.textContent = caseNameTemplateLoadError_;
+            }
+        }
+        updateAppendix1CaseNameSuggestions();
+    }
+    window[callback] = function(response) { finish(response,''); };
+    script.onerror = function() { finish(null,'無法連線後端，請確認 Apps Script 已更新部署。'); };
+    caseNameTemplateRequest_ = {requestId:requestId,timer:null,script:script,callback:callback};
+    document.body.appendChild(script);
+    caseNameTemplateRequest_.timer = setTimeout(function() {finish(null,'讀取逾時，請重新載入。');},20000);
+}
+
+function refreshCaseTemplateCategory_() {
+    const current = caseTemplateCategory_.value;
+    caseTemplateCategory_.replaceChildren();
+    (caseTemplateCategories_[caseTemplateAppendix_.value] || []).forEach(function(category) {
+        const option = document.createElement('option');
+        option.value = category;
+        option.textContent = category;
+        caseTemplateCategory_.appendChild(option);
+    });
+    if (Array.from(caseTemplateCategory_.options).some(function(o){return o.value === current;})) {
+        caseTemplateCategory_.value = current;
+    }
+    updateCaseTemplatePreview_();
+}
+
+function updateCaseTemplatePreview_() {
+    caseTemplatePreview_.textContent = '下拉選單預覽：' +
+        (caseTemplatePattern_.value ? expandCaseNamePattern_(caseTemplatePattern_.value,caseTemplateAppendix_.value) : '請輸入名稱範本');
+}
+
+function resetCaseTemplateEditor_() {
+    caseTemplateEditingId_ = '';
+    caseTemplatePattern_.value = '';
+    caseTemplateSave_.textContent = '新增建議名稱';
+    caseTemplateCancelEdit_.hidden = true;
+    const rows = Array.isArray(caseNameTemplateCache_) ?
+        caseNameTemplateCache_.filter(function(r){return r.appendixType === caseTemplateAppendix_.value;}) : [];
+    caseTemplateOrder_.value = String(rows.reduce(function(max,r){return Math.max(max,Number(r.order)||0);},0)+1);
+    updateCaseTemplatePreview_();
+}
+
+function renderCaseTemplateRows_() {
+    caseTemplateRows_.replaceChildren();
+    const selected = caseTemplateAppendix_.value;
+    const items = (Array.isArray(caseNameTemplateCache_) ? caseNameTemplateCache_ : [])
+        .filter(function(r){return r.appendixType === selected;})
+        .slice().sort(function(a,b){return Number(a.order)-Number(b.order);});
+    if (!items.length) {
+        const tr = document.createElement('tr');
+        const td = document.createElement('td');
+        td.colSpan = 4;
+        td.textContent = caseNameTemplateCache_ ? '本附表尚無建議名稱，可由上方新增。' : '正在載入建議名稱…';
+        tr.appendChild(td);
+        caseTemplateRows_.appendChild(tr);
+        return;
+    }
+    items.forEach(function(item) {
+        const tr = document.createElement('tr');
+        const info = document.createElement('td');
+        info.textContent = item.category + '／' + item.order;
+        const name = document.createElement('td');
+        name.textContent = item.pattern;
+        const status = document.createElement('td');
+        status.textContent = item.enabled ? '啟用' : '停用';
+        const actions = document.createElement('td');
+        function actionButton(text,fn) {
+            const button = document.createElement('button');
+            button.type = 'button';button.textContent = text;
+            button.addEventListener('click',fn);actions.appendChild(button);
+        }
+        actionButton('編輯',function() {
+            caseTemplateEditingId_ = item.id;
+            caseTemplateAppendix_.value = item.appendixType;
+            refreshCaseTemplateCategory_();
+            caseTemplateCategory_.value = item.category;
+            caseTemplatePattern_.value = item.pattern;
+            caseTemplateOrder_.value = item.order;
+            caseTemplateSave_.textContent = '儲存修改';
+            caseTemplateCancelEdit_.hidden = false;
+            updateCaseTemplatePreview_();
+            caseTemplatePattern_.focus();
+        });
+        actionButton(item.enabled ? '停用' : '啟用',function() {
+            if (item.enabled && !window.confirm('確定停用此範本？原有案件名稱不會變更。')) return;
+            sendCaseTemplateChange_({operation:'setEnabled',id:item.id,enabled:String(!item.enabled)});
+        });
+        actionButton('刪除',function() {
+            if (!window.confirm('確定刪除這個建議名稱？此操作不會刪除已填報案件。')) return;
+            sendCaseTemplateChange_({operation:'delete',id:item.id});
+        });
+        [info,name,status,actions].forEach(function(td){tr.appendChild(td);});
+        caseTemplateRows_.appendChild(tr);
+    });
+}
+
+function sendCaseTemplateChange_(values) {
+    const token = getAuthToken();
+    if (!adminMasterAuthenticated || !token || caseNameTemplateRequest_ || caseNameTemplatePending_ || caseTemplateSave_.disabled) return;
+    caseNameTemplateSeq_ += 1;
+    const requestId = 'cnts_' + Date.now().toString(36) + '_' + caseNameTemplateSeq_;
+    const callback = '__riverCaseNameTemplateSave_' + Date.now().toString(36) + '_' + caseNameTemplateSeq_;
+    const params = new URLSearchParams({action:'saveCaseNameTemplate',token:token,requestId:requestId,
+        callback:callback,_:String(Date.now())});
+    Object.keys(values).forEach(function(key){params.set(key,String(values[key]));});
+    caseTemplateSave_.disabled = true;
+    caseTemplateReload_.disabled = true;
+    caseTemplateMessage_.textContent = '正在儲存設定…';
+    const script = document.createElement('script');
+    script.src = GAS_URL + '?' + params.toString();
+    function finish(response,message) {
+        if (!caseNameTemplateRequest_ || caseNameTemplateRequest_.requestId !== requestId) return;
+        clearTimeout(caseNameTemplateRequest_.timer);
+        script.remove();delete window[callback];
+        caseNameTemplateRequest_ = null;
+        caseTemplateSave_.disabled = false;
+        caseTemplateReload_.disabled = false;
+        if (!adminMasterAuthenticated || getAuthToken() !== token) return;
+        if (response && response.responseType === 'caseNameTemplates' && response.requestId === requestId &&
+            response.success === true && Array.isArray(response.templates)) {
+            caseNameTemplateCacheToken_ = token;
+            caseNameTemplateCache_ = response.templates;
+            caseNameTemplateCacheAt_ = Date.now();
+            renderCaseTemplateRows_();
+            resetCaseTemplateEditor_();
+            updateAppendix1CaseNameSuggestions();
+            caseTemplateMessage_.textContent = '設定已儲存；其他使用者重新整理或切換附表後即可取得最新建議。';
+        } else {
+            caseTemplateMessage_.textContent = (response && response.message) || message || '儲存失敗，請重新載入確認。';
+        }
+    }
+    window[callback] = function(response){finish(response,'');};
+    script.onerror = function(){finish(null,'無法連接 Apps Script，請確認已部署新版。');};
+    caseNameTemplateRequest_ = {requestId:requestId,timer:null,script:script,callback:callback};
+    document.body.appendChild(script);
+    caseNameTemplateRequest_.timer = setTimeout(function(){finish(null,'儲存逾時；請重新載入確認是否已成功，避免重複新增。');},20000);
+}
+
+caseTemplateOpen_.addEventListener('click',function() {
+    if (!adminMasterAuthenticated || !getAuthToken()) return;
+    caseTemplateModal_.hidden = false;
+    caseTemplateMessage_.textContent = '';
+    refreshCaseTemplateCategory_();
+    resetCaseTemplateEditor_();
+    renderCaseTemplateRows_();
+    if (caseNameTemplateRequest_) {
+        caseTemplateSave_.disabled = true;
+        caseTemplateMessage_.textContent = '正在讀取最新建議名稱…';
+    } else {
+        loadCaseNameTemplatesFromServer_(true);
+    }
+});
+document.getElementById('caseTemplateAdminClose').addEventListener('click',function(){caseTemplateModal_.hidden=true;});
+caseTemplateModal_.addEventListener('click',function(event){if(event.target === caseTemplateModal_)caseTemplateModal_.hidden=true;});
+document.addEventListener('keydown',function(event){if(event.key==='Escape' && !caseTemplateModal_.hidden)caseTemplateModal_.hidden=true;});
+caseTemplateAppendix_.addEventListener('change',function() {refreshCaseTemplateCategory_();resetCaseTemplateEditor_();renderCaseTemplateRows_();});
+caseTemplatePattern_.addEventListener('input',updateCaseTemplatePreview_);
+caseTemplateCancelEdit_.addEventListener('click',resetCaseTemplateEditor_);
+caseTemplateReload_.addEventListener('click',function(){loadCaseNameTemplatesFromServer_(true);});
+caseTemplateSave_.addEventListener('click',function() {
+    const appendixType = caseTemplateAppendix_.value;
+    const pattern = caseTemplatePattern_.value.trim();
+    const category = caseTemplateCategory_.value;
+    const order = Number(caseTemplateOrder_.value);
+    if (!pattern || pattern.length > 160 || /[\r\n]/.test(pattern)) {
+        caseTemplateMessage_.textContent = '請輸入1至160字的單行名稱範本。';return;
+    }
+    if (!Number.isInteger(order) || order < 1 || order > 9999) {
+        caseTemplateMessage_.textContent = '排序序號請輸入1至9999的整數。';return;
+    }
+    const leftover = pattern.replace(/\{(?:溪別|排水名稱|海岸名稱|標的名稱)\}/g,'');
+    if (/[{}]/.test(leftover)) {caseTemplateMessage_.textContent = '範本中有不支援的變數。';return;}
+    sendCaseTemplateChange_({operation:caseTemplateEditingId_ ? 'update' : 'create',
+        id:caseTemplateEditingId_,appendixType:appendixType,category:category,pattern:pattern,order:String(order)});
+});
+
+// 切換附表時重新取得後端範本；不必重新部署網頁即可同步管理者更新。
+document.addEventListener('change',function(event) {
+    if (event.target && event.target.id === 'appendixType') {
+        loadCaseNameTemplatesFromServer_(true);
+    }
+});
+
+// 任何附表的業務標的變動，都更新案件名稱清單中的動態變數。
+document.addEventListener('change',function(event) {
+    if (event.target && ['riverSystem','creek','drainageSystem','drainageName','coastName',
+        'flowCategory','appendix4RiverSystem','appendix4Creek','appendix4DrainageSystem',
+        'appendix4DrainageName','appendix4CoastName'].indexOf(event.target.id) >= 0) {
+        setTimeout(updateAppendix1CaseNameSuggestions,0);
+    }
+});
+caseNameInput.addEventListener('focus',function() {
+    if (caseNameTemplateLoadError_) loadCaseNameTemplatesFromServer_(true);
+    updateAppendix1CaseNameSuggestions();
+});
+
+// 管理者登出後關閉建議管理視窗，快取不得沿用到下一位登入者。
+const originalClearAuthTokenForCaseTemplates_ = clearAuthToken;
+clearAuthToken = function() {
+    originalClearAuthTokenForCaseTemplates_();
+    caseTemplateModal_.hidden = true;
+    caseNameTemplateCache_ = null;
+    caseNameTemplateCacheAt_ = 0;
+    caseNameTemplateCacheToken_ = '';
+    caseNameTemplateLoadError_ = '';
+    caseTemplateEditingId_ = '';
+    if (caseNameTemplateRequest_) {
+        clearTimeout(caseNameTemplateRequest_.timer);
+        caseNameTemplateRequest_.script.remove();
+        delete window[caseNameTemplateRequest_.callback];
+        caseNameTemplateRequest_ = null;
+    }
+    caseNameTemplatePending_ = false;
+    appendix1CaseNameSuggestions.replaceChildren();
+    caseNameInput.removeAttribute('list');
+    if (caseNameTemplateLoadStatus_) caseNameTemplateLoadStatus_.style.display = 'none';
+};
 
 
 </script>
