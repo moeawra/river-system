@@ -2018,6 +2018,7 @@
                             <label class="appendix5-legacy-checkbox-label" for="appendix5OldWaterStructure">
                                 <input id="appendix5OldWaterStructure" type="checkbox">
                                 <span>本案屬老舊防水建造物更新改善</span>
+                                <span class="appendix5-checkbox-note">（老舊定義為30年以上）</span>
                             </label>
                             <div class="helper-text">勾選後會自動加入上方備註；取消勾選則移除該段文字，其他備註內容保留。</div>
                         </div>
@@ -7202,6 +7203,11 @@
     // 附表5：以原有「備註」欄位記錄勾選結果，不新增工作表欄位。
     const APPENDIX5_OLD_STRUCTURE_NOTE =
         "本案屬老舊防水建造物更新改善";
+    // 附表5新增案件時，自動填入的預設備註文字。
+    const APPENDIX5_DEFAULT_REMARKS = [
+        "(一)___年定期(不定期)檢查所列之改善項目(改善等級：____ )",
+        "(二)其他：(土坡改善案件)"
+    ].join("\n");
     const appendix5OldStructureCheckbox =
         document.getElementById("appendix5OldWaterStructure");
     const appendix5RemarksInput =
@@ -7797,8 +7803,15 @@
     function resetCaseFormForCreate() {
 
         businessForm.reset();
-        updateLandAcquisitionCostState();
-        formAppendixTypeInput.value = getCurrentAppendixType();
+
+        // 只有附表5新增案件時，才自動填入預設備註。
+        if (getCurrentAppendixType() === "appendix5") {
+            document.getElementById("remarks").value =
+                APPENDIX5_DEFAULT_REMARKS;
+        }
+    
+    updateLandAcquisitionCostState();
+    formAppendixTypeInput.value = getCurrentAppendixType();
         operationInput.value = "create";
         caseIdInput.value = "";
         lineChangedInput.value = "0";
