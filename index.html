@@ -1443,7 +1443,7 @@
         <header class="case-template-heading"><h2 id="caseTemplateAdminTitle">案件名稱建議管理</h2><button type="button" id="caseTemplateAdminClose" aria-label="關閉">×</button></header>
         <div class="case-template-body">
           <div class="case-template-form">
-            <div><label for="caseTemplateAppendix">適用附表／清單篩選</label><select id="caseTemplateAppendix"><option value="appendix1">附表1－中央管河川整體改善</option><option value="appendix2">附表2－中央管區排整體改善</option><option value="appendix3">附表3－土地調適改善措施</option><option value="appendix4">附表4－整體環境改善</option><option value="appendix5">附表5－構造物維修改善工程</option></select></div>
+            <div><label for="caseTemplateAppendix">適用附表／清單篩選</label><select id="caseTemplateAppendix"><option value="appendix1">附表1－中央管河川防洪設施新建及加高加強</option><option value="appendix2">附表2－中央管區排防洪設施新建及加高加強</option><option value="appendix3">附表3－海岸侵蝕補償及調適措施</option><option value="appendix4">附表4－水環境營造</option><option value="appendix5">附表5－構造物維修改善工程</option></select></div>
             <div><label for="caseTemplateCategory">案件類別</label><select id="caseTemplateCategory"></select></div>
             <div><label for="caseTemplateOrder">排序序號</label><input id="caseTemplateOrder" type="number" min="1" max="9999" step="1" value="1"></div>
             <div class="case-template-pattern"><label for="caseTemplatePattern">建議名稱範本</label><input id="caseTemplatePattern" type="text" maxlength="160" placeholder="例如：{排水名稱}0K+000~0K+000護岸改善工程"></div>
@@ -1546,16 +1546,16 @@
                 <label for="businessAppendixType">查看附表：</label>
                 <select id="businessAppendixType">
                     <option value="all">全部附表－彙整總覽</option>
-                    <option value="appendix1">附表1－中央管河川整體改善</option>
-                    <option value="appendix2">附表2－中央管區排整體改善</option>
-                    <option value="appendix3">附表3－土地調適改善措施</option>
-                    <option value="appendix4">附表4－整體環境改善</option>
+                    <option value="appendix1">附表1－中央管河川防洪設施新建及加高加強</option>
+                    <option value="appendix2">附表2－中央管區排防洪設施新建及加高加強</option>
+                    <option value="appendix3">附表3－海岸侵蝕補償及調適措施</option>
+                    <option value="appendix4">附表4－水環境營造</option>
                     <option value="appendix5">附表5－構造物維修改善工程</option>
                 </select>
                 <span class="appendix-phase-note"></span>
             </div>
             <div class="data-header">
-                <h2 id="businessDataTitle">附表1-「基礎設施防護-中央管河川整體改善」案件明細表</h2>
+                <h2 id="businessDataTitle">附表1-「中央管河川防洪設施新建及加高加強」案件明細表</h2>
                 <div class="data-header-actions">
                     <div class="case-order-actions">
                         <span id="caseOrderStatus"></span>
@@ -1639,15 +1639,15 @@
             <div class="appendix-selector-panel">
                 <label for="appendixType">提報附表：</label>
                 <select id="appendixType">
-                    <option value="appendix1">附表1－中央管河川整體改善</option>
-                    <option value="appendix2">附表2－中央管區排整體改善</option>
-                    <option value="appendix3">附表3－土地調適改善措施</option>
-                    <option value="appendix4">附表4－整體環境改善</option>
+                    <option value="appendix1">附表1－中央管河川防洪設施新建及加高加強</option>
+                    <option value="appendix2">附表2－中央管區排防洪設施新建及加高加強</option>
+                    <option value="appendix3">附表3－海岸侵蝕補償及調適措施</option>
+                    <option value="appendix4">附表4－水環境營造</option>
                     <option value="appendix5">附表5－構造物維修改善工程</option>
                 </select>
                 <span id="appendixPhaseNote" class="appendix-phase-note"></span>
             </div>
-            <h2 id="entryFormTitle">附表1-「基礎設施防護-中央管河川整體改善」案件資料登錄</h2>
+            <h2 id="entryFormTitle">附表1-「中央管河川防洪設施新建及加高加強」案件資料登錄</h2>
             <div id="requiredFormNotice" class="required-form-notice">※ 除「其他(請說明)」及「備註」外，其餘適用欄位均為必填；「預估用地取得經費」僅類別為「用地先期」時必填。</div>
             <div class="case-management-toolbar">
                 <button type="button" id="newCaseButton" class="secondary-button active-mode">＋ 新增案件</button>
@@ -6435,8 +6435,8 @@
     const APPENDIX_CLIENT_CONFIG = {
 
         appendix1: {
-            title: '附表1-「基礎設施防護-中央管河川整體改善」案件資料登錄',
-            businessTitle: '附表1-「基礎設施防護-中央管河川整體改善」案件明細表',
+            title: '附表1-「中央管河川防洪設施新建及加高加強」案件資料登錄',
+            businessTitle: '附表1-「中央管河川防洪設施新建及加高加強」案件明細表',
             caseIdIndex: 36,
             sortOrderIndex: 37,
             caseNameIndex: 7,
@@ -6453,8 +6453,8 @@
         },
 
         appendix2: {
-            title: '附表2-「基礎設施防護-中央管區排整體改善」案件資料登錄',
-            businessTitle: '附表2-「基礎設施防護-中央管區排整體改善」案件明細表',
+            title: '附表2-「中央管區排防洪設施新建及加高加強」案件資料登錄',
+            businessTitle: '附表2-「中央管區排防洪設施新建及加高加強」案件明細表',
             caseIdIndex: 34,
             sortOrderIndex: 35,
             caseNameIndex: 6,
@@ -6471,8 +6471,8 @@
         },
 
         appendix3: {
-            title: '附表3-「土地調適改善措施」案件資料登錄',
-            businessTitle: '附表3-「土地調適改善措施」案件明細表',
+            title: '附表3-「海岸侵蝕補償及調適措施」案件資料登錄',
+            businessTitle: '附表3-「海岸侵蝕補償及調適措施」案件明細表',
             caseIdIndex: 34,
             sortOrderIndex: 35,
             caseNameIndex: 6,
@@ -6489,8 +6489,8 @@
         },
 
         appendix4: {
-            title: '附表4-「整體環境改善」案件資料登錄',
-            businessTitle: '附表4-「整體環境改善」案件明細表',
+            title: '附表4-「水環境營造」案件資料登錄',
+            businessTitle: '附表4-「水環境營造」案件明細表',
             caseIdIndex: 35,
             sortOrderIndex: 36,
             caseNameIndex: 7,
@@ -6784,7 +6784,7 @@
                 restricted;
 
             appendix2Option.textContent =
-                "附表2－中央管區排整體改善";
+                "附表2－中央管區排防洪設施新建及加高加強";
         }
 
 
@@ -18245,10 +18245,10 @@ function initializeRiverCoastReviewModule() {
                 <div class="river-coast-review-filter-field">
                     <label for="riverCoastReviewAppendixType">提報附表</label>
                     <select id="riverCoastReviewAppendixType">
-                        <option value="appendix1">附表1－中央管河川整體改善</option>
-                        <option value="appendix2">附表2－中央管區排整體改善</option>
-                        <option value="appendix3">附表3－土地調適改善措施</option>
-                        <option value="appendix4">附表4－整體環境改善</option>
+                        <option value="appendix1">附表1－中央管河川防洪設施新建及加高加強</option>
+                        <option value="appendix2">附表2－中央管區排防洪設施新建及加高加強</option>
+                        <option value="appendix3">附表3－海岸侵蝕補償及調適措施</option>
+                        <option value="appendix4">附表4－水環境營造</option>
                         <option value="appendix5">附表5－構造物維修改善工程</option>
                     </select>
                 </div>
