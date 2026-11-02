@@ -17959,6 +17959,34 @@ function initializeRiverCoastReviewModule() {
             line-height: 1.5;
         }
 
+
+/* 河川海岸組－審查意見快捷範本 */
+.river-coast-review-opinion-template-button {
+    display: inline-block;
+    margin-top: 6px;
+    padding: 5px 12px;
+    border: 1px solid #96afbf;
+    border-radius: 4px;
+    background: #f3f8fb;
+    color: #17445e;
+    font-size: 13px;
+    font-family: inherit;
+    cursor: pointer;
+}
+
+/* 滑鼠移至按鈕時 */
+.river-coast-review-opinion-template-button:hover {
+    background: #e3f1f6;
+    border-color: #247d8e;
+}
+
+/* 鍵盤操作時的焦點提示 */
+.river-coast-review-opinion-template-button:focus-visible {
+    outline: 2px solid #247d8e;
+    outline-offset: 2px;
+}
+
+
         .river-coast-review-input.review-dirty,
         .river-coast-review-textarea.review-dirty {
             border-color: #1565c0;
@@ -19732,22 +19760,79 @@ function renderRiverCoastReviewRows(
             );
 
 
-            const opinionTd =
-                document.createElement(
-                    "td"
-                );
 
-            opinionTd.appendChild(
-                createRiverCoastReviewInput_(
-                    record,
-                    "opinion",
-                    "textarea"
-                )
-            );
 
-            tr.appendChild(
-                opinionTd
-            );
+const opinionTd =
+    document.createElement("td");
+
+// 建立審查意見輸入框
+const opinionInput =
+    createRiverCoastReviewInput_(
+        record,
+        "opinion",
+        "textarea"
+    );
+
+opinionTd.appendChild(opinionInput);
+
+// ========================================
+// 河川海岸組：審查意見快捷範本
+// 未來要增加範本，只需在此新增文字
+// ========================================
+const opinionTemplates = [
+    "擬同意辦理",
+    "暫緩辦理"
+];
+
+// 依照範本清單，自動建立按鈕
+opinionTemplates.forEach(function(templateText) {
+
+    const button = document.createElement("button");
+
+    button.type = "button";
+
+    button.className =
+        "river-coast-review-opinion-template-button";
+
+    // 按鈕顯示的文字
+    button.textContent = templateText;
+
+    // 點選後，直接將範本文字加入意見欄
+    button.addEventListener("click", function() {
+
+        // 儲存期間或唯讀狀態禁止修改
+        if (
+            riverCoastReviewSaving ||
+            opinionInput.readOnly ||
+            opinionInput.disabled
+        ) {
+            return;
+        }
+
+        // 保留原有內容
+        const currentText = opinionInput.value.trimEnd();
+
+        // 有內容時換行加入；空白時直接填入
+        opinionInput.value = currentText
+            ? currentText + "\n" + templateText
+            : templateText;
+
+        // 通知系統此欄位已修改，供儲存功能辨識
+        opinionInput.dispatchEvent(
+            new Event("input", {
+                bubbles: true
+            })
+        );
+
+        opinionInput.focus();
+    });
+
+    // 將範本按鈕加入意見欄位下方
+    opinionTd.appendChild(button);
+});
+
+// 將整個意見欄位加入審查表格
+tr.appendChild(opinionTd);
 
 
             [
