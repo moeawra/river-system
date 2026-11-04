@@ -116,6 +116,25 @@
             grid-column: 1 / -1;
         }
 
+        /* 跨行政區案件：第二組縣市、鄉鎮市（僅選用時顯示）。 */
+        .additional-location-add-row { margin-top: -3px; }
+        .additional-location-button { font-size: 14px; padding: 8px 12px; }
+        .additional-location-panel {
+            padding: 14px; border: 1px solid #cbdbe3; border-radius: 6px;
+            background: #f8fbfc;
+        }
+        .additional-location-heading {
+            display: flex; align-items: center; justify-content: space-between;
+            gap: 10px; flex-wrap: wrap; margin-bottom: 12px;
+        }
+        .additional-location-remove { font-size: 13px; padding: 6px 10px; }
+        .additional-location-grid {
+            display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px;
+        }
+        @media (max-width: 700px) {
+            .additional-location-grid { grid-template-columns: 1fr; }
+        }
+
         .form-field label {
             display: block;
             margin-bottom: 6px;
@@ -1741,6 +1760,30 @@
                             <select id="township" name="township" disabled>
                                 <option value="">請先選擇縣市</option>
                             </select>
+                        </div>
+                        <div class="form-field full additional-location-add-row">
+                            <button type="button" id="addSecondLocationButton" class="secondary-button additional-location-button">＋ 新增縣市及鄉鎮市</button>
+                        </div>
+                        <div id="secondLocationFields" class="form-field full additional-location-panel" style="display:none;">
+                            <div class="additional-location-heading">
+                                <strong>第二組縣市及鄉鎮市（選填）</strong>
+                                <button type="button" id="removeSecondLocationButton" class="secondary-button additional-location-remove">移除第二組</button>
+                            </div>
+                            <div class="additional-location-grid">
+                                <div class="form-field">
+                                    <label for="county2">縣市</label>
+                                    <select id="county2" name="county2" disabled>
+                                        <option value="">請選擇縣市</option>
+                                    </select>
+                                </div>
+                                <div class="form-field">
+                                    <label for="township2">鄉鎮市</label>
+                                    <select id="township2" name="township2" disabled>
+                                        <option value="">請先選擇縣市</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="helper-text">同縣市跨鄉鎮市，或有跨縣市案件才需填寫。</div>
                         </div>
 
                         <div class="form-field appendix45-only" style="display:none;">
@@ -7803,6 +7846,7 @@
     function resetCaseFormForCreate() {
 
         businessForm.reset();
+        hideSecondLocation();
 
         // 只有附表5新增案件時，才自動填入預設備註。
         if (getCurrentAppendixType() === "appendix5") {
@@ -8099,8 +8143,15 @@
         }
 
 
+        // 編輯時只把 D/E 欄第一組還原給既有連動；第二組獨立處理。
+        const administrativeLocations = splitCaseAdministrativeLocations(row[3], row[4]);
+        const primaryRow = row.slice();
+        primaryRow[3] = administrativeLocations.county;
+        primaryRow[4] = administrativeLocations.township;
+
         // 先清空上一筆案件可能殘留的附表專用欄位。
         businessForm.reset();
+        hideSecondLocation();
 
         formAppendixTypeInput.value =
             appendixType;
@@ -8148,14 +8199,14 @@
             );
 
             countySelect.value =
-                row[3] || "";
+                primaryRow[3] || "";
 
             countySelect.dispatchEvent(
                 new Event("change")
             );
 
             townshipSelect.value =
-                row[4] || "";
+                primaryRow[4] || "";
         }
 
 
@@ -8192,14 +8243,14 @@
             );
 
             countySelect.value =
-                row[3] || "";
+                primaryRow[3] || "";
 
             countySelect.dispatchEvent(
                 new Event("change")
             );
 
             townshipSelect.value =
-                row[4] || "";
+                primaryRow[4] || "";
 
             setFieldValue("caseName", row[7]);
             setFieldValue("structureName", row[8]);
@@ -8263,14 +8314,14 @@
             );
 
             countySelect.value =
-                row[3] || "";
+                primaryRow[3] || "";
 
             countySelect.dispatchEvent(
                 new Event("change")
             );
 
             townshipSelect.value =
-                row[4] || "";
+                primaryRow[4] || "";
 
             setFieldValue("caseName", row[6]);
             setFieldValue("structureName", row[7]);
@@ -8301,7 +8352,7 @@
         ) {
 
             restoreAppendix3LocationSelection(
-                row
+                primaryRow
             );
             setFieldValue("caseName", row[6]);
             setFieldValue("structureName", row[7]);
@@ -8332,7 +8383,7 @@
         ) {
 
             restoreAppendix4LocationSelection(
-                row
+                primaryRow
             );
             setFieldValue("caseName", row[7]);
             setFieldValue("structureName", row[8]);
@@ -8363,7 +8414,7 @@
         ) {
 
             restoreAppendix4LocationSelection(
-                row
+                primaryRow
             );
             setFieldValue("caseName", row[7]);
             setFieldValue("structureName", row[8]);
@@ -8389,6 +8440,11 @@
             setFieldValue("budget118", row[28]);
             setFieldValue("estimatedCarbon", row[30]);
             setFieldValue("remarks", row[36]);
+        }
+
+        // 有第二組時自動展開；單一行政區案件仍維持原畫面。
+        if (administrativeLocations.county2 && administrativeLocations.township2) {
+            showSecondLocation(administrativeLocations.county2, administrativeLocations.township2);
         }
 
         // 回填附表5舊案時，依 AK 備註內是否有指定獨立文字行還原勾選。
@@ -10188,8 +10244,6 @@ function renderBusinessDataRows(
             "逕流分擔": 0
         };
 
-        const countyDistribution = {};
-
         Object.keys(allData)
             .forEach(function(appendixType) {
 
@@ -10260,14 +10314,6 @@ function renderBusinessDataRows(
                         ]++;
                     }
 
-                    const county =
-                        String(
-                            row[3] ||
-                            "未填列"
-                        ).trim();
-
-                    countyDistribution[county] =
-                        (countyDistribution[county] || 0) + 1;
                 });
             });
 
@@ -10314,10 +10360,6 @@ function renderBusinessDataRows(
                 ${createDashboardBars(
                     categoryDistribution,
                     "案件類別分布"
-                )}
-                ${createDashboardBars(
-                    countyDistribution,
-                    "縣市分布"
                 )}
             </div>
         `;
@@ -12538,6 +12580,9 @@ function handleBusinessData(
 
     let viewLineMap = null;
     let viewLineLayer = null;
+    // 唯讀審查地圖的 JSONP 回應防串案編號，不影響原有分署 readLine。
+    let viewLineRequestSerial = 0;
+    let riverCoastLineCallbackName = "";
 
 
     function initializeViewLineMap() {
@@ -12568,6 +12613,28 @@ function openViewLineMap(
 ) {
 
     initializeViewLineMap();
+
+    const requestSerial = ++viewLineRequestSerial;
+    if (riverCoastLineCallbackName) {
+        delete window[riverCoastLineCallbackName];
+        riverCoastLineCallbackName = "";
+    }
+    const isRiverCoastReviewLine = caseData.riverCoastReview === true;
+    const callbackName = isRiverCoastReviewLine
+        ? "riverCoastViewLine_" + requestSerial
+        : "handleViewLineData";
+    if (isRiverCoastReviewLine) {
+        riverCoastLineCallbackName = callbackName;
+        window[callbackName] = function(response) {
+            if (requestSerial !== viewLineRequestSerial ||
+                !viewLineModal.classList.contains("show")) {
+                return;
+            }
+            delete window[callbackName];
+            riverCoastLineCallbackName = "";
+            handleViewLineData(response);
+        };
+    }
 
     viewLineTitle.textContent =
         (
@@ -12718,7 +12785,8 @@ function openViewLineMap(
 
     script.src =
         GAS_URL +
-        "?action=readLine" +
+        "?action=" +
+        (isRiverCoastReviewLine ? "readRiverCoastReviewLine" : "readLine") +
         "&appendixType=" +
         encodeURIComponent(
             caseData.appendixType ||
@@ -12772,16 +12840,19 @@ function openViewLineMap(
         encodeURIComponent(
             caseData.caseName || ""
         ) +
-        "&callback=handleViewLineData" +
+        "&callback=" + callbackName +
         "&_=" +
         Date.now();
 
     script.onerror =
         function() {
-
+            if (requestSerial !== viewLineRequestSerial) return;
+            if (isRiverCoastReviewLine) {
+                delete window[callbackName];
+                riverCoastLineCallbackName = "";
+            }
             viewLineStatus.textContent =
                 "工程範圍資料讀取失敗，請確認網路。";
-
         };
 
     document.body.appendChild(
@@ -12890,6 +12961,12 @@ function openViewLineMap(
 
     function closeViewLineMap() {
 
+        // 關閉視窗即作廢尚未回傳的審查線形查詢。
+        viewLineRequestSerial++;
+        if (riverCoastLineCallbackName) {
+            delete window[riverCoastLineCallbackName];
+            riverCoastLineCallbackName = "";
+        }
         viewLineModal.classList.remove(
             "show"
         );
@@ -13613,6 +13690,77 @@ function openViewLineMap(
         ]
     };
 
+    // 第二組行政區獨立使用完整縣市／鄉鎮清單，不改動第一組的水系、排水、海岸連動。
+    const secondLocationPanel = document.getElementById("secondLocationFields");
+    const addSecondLocationButton = document.getElementById("addSecondLocationButton");
+    const removeSecondLocationButton = document.getElementById("removeSecondLocationButton");
+    const secondCountySelect = document.getElementById("county2");
+    const secondTownshipSelect = document.getElementById("township2");
+
+    function refreshSecondTownships(selectedTownship) {
+        const county = secondCountySelect.value;
+        const townships = townshipData[county] || [];
+        secondTownshipSelect.innerHTML = '';
+        const prompt = document.createElement("option");
+        prompt.value = '';
+        prompt.textContent = county ? "請選擇鄉鎮市" : "請先選擇縣市";
+        secondTownshipSelect.appendChild(prompt);
+        townships.forEach(function(name) {
+            const option = document.createElement("option");
+            option.value = name;
+            option.textContent = name;
+            secondTownshipSelect.appendChild(option);
+        });
+        secondTownshipSelect.disabled = !county || secondLocationPanel.style.display === "none";
+        if (selectedTownship && townships.indexOf(selectedTownship) !== -1) {
+            secondTownshipSelect.value = selectedTownship;
+        }
+    }
+
+    function hideSecondLocation() {
+        secondLocationPanel.style.display = "none";
+        addSecondLocationButton.style.display = "";
+        secondCountySelect.value = "";
+        secondCountySelect.disabled = true;
+        secondTownshipSelect.value = "";
+        secondTownshipSelect.disabled = true;
+        secondCountySelect.classList.remove("required-field-error");
+        secondTownshipSelect.classList.remove("required-field-error");
+    }
+
+    function showSecondLocation(county, township) {
+        secondLocationPanel.style.display = "";
+        addSecondLocationButton.style.display = "none";
+        secondCountySelect.disabled = false;
+        secondCountySelect.value = county || "";
+        refreshSecondTownships(township || "");
+    }
+
+    function splitCaseAdministrativeLocations(countyText, townshipText) {
+        const counties = String(countyText || "").split("、").map(function(s) { return s.trim(); }).filter(Boolean);
+        const townships = String(townshipText || "").split("、").map(function(s) { return s.trim(); }).filter(Boolean);
+        return {
+            county: counties[0] || "",
+            township: townships[0] || "",
+            county2: townships.length > 1 ? (counties[1] || counties[0] || "") : "",
+            township2: townships[1] || ""
+        };
+    }
+
+    Object.keys(townshipData).forEach(function(county) {
+        const option = document.createElement("option");
+        option.value = county;
+        option.textContent = county;
+        secondCountySelect.appendChild(option);
+    });
+    addSecondLocationButton.addEventListener("click", function() { showSecondLocation(); });
+    removeSecondLocationButton.addEventListener("click", hideSecondLocation);
+    secondCountySelect.addEventListener("change", function() { refreshSecondTownships(); });
+    [secondCountySelect, secondTownshipSelect].forEach(function(select) {
+        select.addEventListener("change", function() {
+            select.classList.remove("required-field-error");
+        });
+    });
 
     const countySelect = document.getElementById("county");
     const townshipSelect = document.getElementById("township");
@@ -14100,6 +14248,8 @@ function openViewLineMap(
     divisionSelect.addEventListener(
         "change",
         function() {
+            // 變更分署時不沿用上一分署案件的第二組行政區。
+            hideSecondLocation();
 
             const restricted =
                 updateRegionalDrainageRestrictions();
@@ -14492,6 +14642,23 @@ function openViewLineMap(
             }
         );
 
+
+        // -----------------------------------
+        // 第二組行政區（選填）：只檢查縣市／鄉鎮市的完整性及對應。
+        // 第一組仍由原本的水系／排水／海岸連動及後端驗證。
+        // -----------------------------------
+        if (secondLocationPanel.style.display !== "none") {
+            const county2 = secondCountySelect.value.trim();
+            const township2 = secondTownshipSelect.value.trim();
+            const allowed = townshipData[county2] || [];
+            if (!county2 || !township2 || allowed.indexOf(township2) === -1 ||
+                (county2 === countySelect.value && township2 === townshipSelect.value)) {
+                missingFields.push("第二組縣市及鄉鎮市（請完整選擇，且勿與第一組重複）");
+                const target = !county2 ? secondCountySelect : secondTownshipSelect;
+                target.classList.add("required-field-error");
+                if (!firstInvalidElement) firstInvalidElement = target;
+            }
+        }
 
         // -----------------------------------
         // 預估碳排量
@@ -15282,12 +15449,6 @@ function openViewLineMap(
                 locationIndex
             );
 
-        const countyDistribution =
-            countByColumn(
-                validRows,
-                3
-            );
-
         container.innerHTML = `
             <div class="dashboard-cards">
 
@@ -15344,12 +15505,6 @@ function openViewLineMap(
                     )
                 }
 
-                ${
-                    createDashboardBars(
-                        countyDistribution,
-                        "縣市分布"
-                    )
-                }
             </div>
         `;
     }
@@ -16887,8 +17042,8 @@ if (loginHint) {
                             <thead>
                                 <tr>
                                     <th>河川分署</th>
-                                    <th>出流管制審查<br>(河海組5科)</th>
-                                    <th>水利建造物複查、縣市政府評鑑<br>(河海組3科)</th>
+                                    <th>出流管制審查(單位：千元)<br>(河海組5科)</th>
+                                    <th>水利建造物複查、縣市政府評鑑(單位：千元)<br>(河海組3科)</th>
                                     <th>最後更新</th>
                                 </tr>
                             </thead>
@@ -19487,6 +19642,54 @@ function createRiverCoastReviewDetailPanel_(
                 }
             );
 
+
+            // 河川海岸組「生態及位置資訊」：唯讀查看已提報的工程範圍。
+            if (sectionName === "生態及位置資訊") {
+                const rangeItem = document.createElement("div");
+                rangeItem.className = "river-coast-review-detail-item is-full";
+
+                const rangeLabel = document.createElement("div");
+                rangeLabel.className = "river-coast-review-detail-label";
+                rangeLabel.textContent = "工程範圍";
+
+                const rangeValue = document.createElement("div");
+                rangeValue.className = "river-coast-review-detail-value";
+
+                const viewButton = document.createElement("button");
+                viewButton.type = "button";
+                viewButton.className = "view-line-button";
+                viewButton.textContent = "🔎 查看工程範圍";
+                viewButton.addEventListener("click", function() {
+                    // 現有審查明細已包含各附表的位置欄位，僅供地圖標題顯示。
+                    const detailValue = function(label) {
+                        const found = details.find(function(item) {
+                            return item && item.label === label;
+                        });
+                        return found && found.value != null ? String(found.value) : "";
+                    };
+
+                    openViewLineMap({
+                        riverCoastReview: true,
+                        appendixType: record.appendixType,
+                        caseId: record.caseId,
+                        division: record.divisionName || record.division || "",
+                        county: detailValue("縣市"),
+                        township: detailValue("鄉鎮市"),
+                        riverSystem: detailValue("水系"),
+                        creek: detailValue("溪別"),
+                        drainageName: detailValue("排水名稱"),
+                        coastName: detailValue("海岸名稱"),
+                        flowCategory: detailValue("流域別"),
+                        waterbodyName: detailValue("溪別、區排或海岸名稱"),
+                        caseName: record.caseName || ""
+                    });
+                });
+
+                rangeValue.appendChild(viewButton);
+                rangeItem.appendChild(rangeLabel);
+                rangeItem.appendChild(rangeValue);
+                grid.appendChild(rangeItem);
+            }
 
             section.appendChild(
                 grid
@@ -25151,8 +25354,13 @@ clearAuthToken = function() {
                 );
 
             if (editingRow) {
+                // 行政區對照資料延遲載入後，仍以第一組恢復原有連動。
+                const primaryRow = editingRow.slice();
+                const locations = splitCaseAdministrativeLocations(editingRow[3], editingRow[4]);
+                primaryRow[3] = locations.county;
+                primaryRow[4] = locations.township;
                 restoreAppendix4LocationSelection(
-                    editingRow
+                    primaryRow
                 );
                 return;
             }
@@ -29223,6 +29431,266 @@ body::before {
 }
 
 </style>
+
+<!-- 水文技術組案件資料檢視：新增獨立唯讀頁面，不更動河海組審查操作。 -->
+<style id="hydrologyReadOnlyStyles">
+#hydrologyViewTabs {
+    display: none; max-width: 1260px; margin: 24px auto 0; padding: 0 18px;
+    gap: 8px; flex-wrap: wrap; align-items: center;
+}
+#hydrologyViewTabs button {
+    padding: 10px 17px; min-height: 42px; border: 1px solid #aabeca;
+    background: white; color: #183b50; font: inherit; cursor: pointer;
+}
+#hydrologyViewTabs button.active { background: #12384e; color: white; border-color: #12384e; }
+#hydrologyViewerPage { padding: 0 18px 28px; }
+#hydrologyViewerPage .river-coast-review-card { margin: 16px auto; }
+#hydrologyViewerPage .river-coast-review-table { min-width: 810px; }
+#hydrologyViewerPage .river-coast-review-table td { vertical-align: middle; }
+#hydrologyViewerPage .river-coast-review-table td.hydrology-case-name { min-width: 260px; white-space: normal; }
+#hydrologyViewerStatus { color: #475569; min-height: 24px; line-height: 1.5; }
+#hydrologyViewerStatus.error { color: #b42318; }
+#hydrologyViewerCount { color: #526875; font-size: 13px; }
+@media (max-width: 760px) { #hydrologyViewTabs { margin-top: 12px; } #hydrologyViewerPage { padding: 0 10px 18px; } }
+</style>
+<script id="hydrologyReadOnlyModule">
+(function initializeHydrologyReadOnlyModule_() {
+    'use strict';
+
+    const officePage = document.getElementById('officeBudgetPage');
+    if (!officePage || !officePage.parentNode) return;
+
+    const nav = document.createElement('nav');
+    nav.id = 'hydrologyViewTabs';
+    nav.setAttribute('aria-label', '水文技術組功能切換');
+    nav.innerHTML = '<button type="button" id="hydrologyCasesTab">附表1～5－案件資料檢視</button>' +
+        '<button type="button" id="hydrologyOfficeTab">表2－經費填報</button>';
+
+    const page = document.createElement('div');
+    page.id = 'hydrologyViewerPage';
+    page.className = 'page';
+    page.innerHTML = `
+        <div class="river-coast-review-card">
+            <div class="river-coast-review-heading">
+                <div><h2>附表1～附表5－案件資料檢視</h2>
+                    <p class="river-coast-review-meta">水文技術組</p>
+                </div>
+            </div>
+            <div class="river-coast-review-filter">
+                <div class="river-coast-review-filter-field">
+                    <label for="hydrologyAppendixType">提報附表</label>
+                    <select id="hydrologyAppendixType"></select>
+                </div>
+                <div class="river-coast-review-filter-field">
+                    <label for="hydrologyDivision">河川分署</label>
+                    <select id="hydrologyDivision"></select>
+                </div>
+                <div class="river-coast-review-filter-field">
+                    <label for="hydrologySearch">案件搜尋</label>
+                    <input id="hydrologySearch" type="search" placeholder="輸入案件名稱、類別、分署或提報內容">
+                </div>
+                <button type="button" class="secondary-button" id="hydrologyReload">重新載入</button>
+            </div>
+            <div class="river-coast-review-table-wrap">
+                <table class="river-coast-review-table">
+                    <thead><tr><th>分署</th><th>項次</th><th>類別</th><th>案件名稱</th>
+                        <th>提報經費（千元）</th><th>提報內容</th></tr></thead>
+                    <tbody id="hydrologyCasesBody"><tr><td colspan="6">尚未載入資料</td></tr></tbody>
+                </table>
+            </div>
+            <div class="river-coast-review-actions">
+                <span id="hydrologyViewerStatus" role="status"></span>
+                <span id="hydrologyViewerCount"></span>
+            </div>
+        </div>`;
+
+    officePage.parentNode.insertBefore(nav, officePage);
+    officePage.parentNode.insertBefore(page, officePage);
+
+    const appendixSelect = page.querySelector('#hydrologyAppendixType');
+    const divisionSelect = page.querySelector('#hydrologyDivision');
+    // 直接複製河海組既有附表及分署選項，避免兩套顯示名稱不一致。
+    const sourceAppendix = document.getElementById('riverCoastReviewAppendixType');
+    const sourceDivision = document.getElementById('riverCoastReviewDivision');
+    if (sourceAppendix) appendixSelect.append(...Array.from(sourceAppendix.options).map(o => o.cloneNode(true)));
+    if (sourceDivision) divisionSelect.append(...Array.from(sourceDivision.options).map(o => o.cloneNode(true)));
+
+    const search = page.querySelector('#hydrologySearch');
+    const body = page.querySelector('#hydrologyCasesBody');
+    const status = page.querySelector('#hydrologyViewerStatus');
+    const count = page.querySelector('#hydrologyViewerCount');
+    const viewerTab = nav.querySelector('#hydrologyCasesTab');
+    const officeTab = nav.querySelector('#hydrologyOfficeTab');
+    let records = [];
+    let pendingSerial = 0;
+    let requestScript = null;
+    let requestCallback = '';
+
+    function inHydrologyScope_() {
+        return currentAuthRole === 'office' && currentAuthOfficeName === '水文技術組';
+    }
+
+    function cancelRequest_() {
+        pendingSerial++;
+        if (requestScript) { requestScript.remove(); requestScript = null; }
+        if (requestCallback) { delete window[requestCallback]; requestCallback = ''; }
+    }
+
+    function setPage_(target) {
+        if (!inHydrologyScope_()) return;
+        showStandalonePage_(target === 'viewer' ? 'hydrologyViewerPage' : 'officeBudgetPage');
+        viewerTab.classList.toggle('active', target === 'viewer');
+        officeTab.classList.toggle('active', target !== 'viewer');
+        viewerTab.setAttribute('aria-current', target === 'viewer' ? 'page' : 'false');
+        officeTab.setAttribute('aria-current', target !== 'viewer' ? 'page' : 'false');
+    }
+
+    function addTextCell_(tr, value, cls) {
+        const td = document.createElement('td');
+        td.textContent = value === null || value === undefined ? '' : String(value);
+        if (cls) td.className = cls;
+        tr.appendChild(td);
+        return td;
+    }
+
+    function render_() {
+        body.replaceChildren();
+        let shown = 0;
+        const query = search.value.trim().toLowerCase();
+        records.forEach(function(record) {
+            const allDetails = (Array.isArray(record.details) ? record.details : [])
+                .map(item => String(item.label || '') + ' ' + String(item.value || '')).join(' ');
+            const searchValue = [record.divisionName, record.division, record.itemNo,
+                record.category, record.caseName, allDetails].join(' ').toLowerCase();
+            if (query && !searchValue.includes(query)) return;
+            shown++;
+            const tr = document.createElement('tr');
+            tr.className = 'river-coast-review-main-row';
+            addTextCell_(tr, record.divisionName || record.division || '');
+            addTextCell_(tr, record.itemNo || '');
+            addTextCell_(tr, record.category || '');
+            addTextCell_(tr, record.caseName || '', 'hydrology-case-name');
+            const budget = record.totalBudget;
+            const money = budget === '' || budget === null || budget === undefined
+                ? '未填' : Number(budget).toLocaleString('zh-TW', {maximumFractionDigits:2});
+            addTextCell_(tr, money, 'river-coast-review-money');
+            const actionCell = document.createElement('td');
+            actionCell.style.textAlign = 'center';
+            const detailButton = document.createElement('button');
+            detailButton.type = 'button';
+            detailButton.className = 'river-coast-review-detail-button';
+            detailButton.textContent = '查看提報內容';
+            detailButton.setAttribute('aria-expanded', 'false');
+            actionCell.appendChild(detailButton);
+            tr.appendChild(actionCell);
+            body.appendChild(tr);
+
+            const detailRow = document.createElement('tr');
+            detailRow.className = 'river-coast-review-detail-row';
+            detailRow.dataset.expanded = 'false';
+            const detailCell = document.createElement('td');
+            detailCell.colSpan = 6;
+            // 共用既有唯讀提報明細及工程範圍地圖，不建立審查輸入框。
+            detailCell.appendChild(createRiverCoastReviewDetailPanel_(record));
+            detailRow.appendChild(detailCell);
+            body.appendChild(detailRow);
+            detailButton.addEventListener('click', function() {
+                toggleRiverCoastReviewDetail_(detailButton, detailRow);
+            });
+        });
+        if (!shown) {
+            const tr = document.createElement('tr');
+            const td = document.createElement('td');
+            td.colSpan = 6;
+            td.textContent = '目前沒有符合條件的案件。';
+            td.style.textAlign = 'center';
+            td.style.padding = '20px';
+            tr.appendChild(td);
+            body.appendChild(tr);
+        }
+        count.textContent = '顯示 ' + shown + ' 件／共 ' + records.length + ' 件';
+    }
+
+    function load_() {
+        if (!inHydrologyScope_()) return;
+        cancelRequest_();
+        const serial = pendingSerial;
+        records = [];
+        body.replaceChildren();
+        count.textContent = '';
+        status.className = '';
+        status.textContent = '案件資料載入中…';
+        const callbackName = 'hydrologyCaseList_' + serial;
+        const script = document.createElement('script');
+        script.id = 'hydrologyCasesJsonp';
+        requestScript = script;
+        requestCallback = callbackName;
+        const token = getAuthToken();
+        window[callbackName] = function(response) {
+            if (serial !== pendingSerial || !inHydrologyScope_()) return;
+            cancelRequest_();
+            if (handleAuthFailure(response)) return;
+            if (!response || response.success !== true ||
+                response.responseType !== 'hydrologyCases' || !Array.isArray(response.records)) {
+                status.className = 'error';
+                status.textContent = response && response.message ? response.message : '案件資料讀取失敗。';
+                return;
+            }
+            records = response.records;
+            status.className = '';
+            status.textContent = '';
+            render_();
+        };
+        script.onerror = function() {
+            if (serial !== pendingSerial || !inHydrologyScope_()) return;
+            cancelRequest_();
+            status.className = 'error';
+            status.textContent = '案件資料讀取失敗，請確認網路及 Apps Script 部署。';
+        };
+        script.src = GAS_URL + '?action=readHydrologyCases' +
+            '&appendixType=' + encodeURIComponent(appendixSelect.value || 'appendix1') +
+            '&division=' + encodeURIComponent(divisionSelect.value) +
+            '&token=' + encodeURIComponent(token) +
+            '&callback=' + callbackName + '&_=' + Date.now();
+        document.body.appendChild(script);
+    }
+
+    viewerTab.addEventListener('click', function() { setPage_('viewer'); load_(); });
+    officeTab.addEventListener('click', function() { setPage_('office'); });
+    appendixSelect.addEventListener('change', load_);
+    divisionSelect.addEventListener('change', load_);
+    page.querySelector('#hydrologyReload').addEventListener('click', load_);
+    search.addEventListener('input', render_);
+
+    // 在既有所有角色切換包裝完成後接入；其他帳號沿用原本顯示與權限。
+    const previousApplyScope = applyAuthScope;
+    applyAuthScope = function(role, divisionId, officeName) {
+        previousApplyScope(role, divisionId, officeName);
+        const enabled = inHydrologyScope_();
+        nav.style.display = enabled ? 'flex' : 'none';
+        if (enabled) {
+            setPage_('viewer');
+            load_();
+        } else {
+            cancelRequest_();
+            records = [];
+            page.classList.remove('active');
+            viewerTab.classList.remove('active');
+            officeTab.classList.remove('active');
+        }
+    };
+
+    const previousClearAuthToken = clearAuthToken;
+    clearAuthToken = function() {
+        cancelRequest_();
+        records = [];
+        nav.style.display = 'none';
+        page.classList.remove('active');
+        previousClearAuthToken();
+    };
+})();
+</script>
+
 </body>
 
 </html>
