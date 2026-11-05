@@ -24308,6 +24308,20 @@ clearAuthToken = function() {
                 ".form-field"
             );
 
+        // 第二組行政區的按鈕與欄位也必須納入 Grid 排序；
+        // 否則未指定 order 的元素預設為 0，會跑到類別之前。
+        const addSecondLocationField =
+            document.getElementById(
+                "addSecondLocationButton"
+            ).closest(
+                ".form-field"
+            );
+
+        const secondLocationField =
+            document.getElementById(
+                "secondLocationFields"
+            );
+
         const caseNameField =
             document.getElementById(
                 "caseName"
@@ -24361,7 +24375,11 @@ clearAuthToken = function() {
             ],
             [countyField, 6],
             [townshipField, 7],
-            [caseNameField, 8]
+            // 按鈕固定在第一組縣市、鄉鎮市的下一列；
+            // 第二組展開時也維持在按鈕之下、案件名稱之上。
+            [addSecondLocationField, 8],
+            [secondLocationField, 9],
+            [caseNameField, 10]
         ];
 
         orderedFields.forEach(
