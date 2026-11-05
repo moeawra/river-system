@@ -1947,7 +1947,7 @@
                             </select>
                         </div>
                         <!-- 小水力 -->
-                        <div class="form-field appendix1-only">
+                        <div class="form-field appendix12-hydro-only">
                             <label for="hydroScore">河川小水力發電潛力案場初評結果(請填列分數)</label>
                             <input id="hydroScore" name="hydroScore" type="number" step="any">
                             <div class="helper-text">
@@ -6498,18 +6498,18 @@
         appendix2: {
             title: '附表2-「中央管區排防洪設施新建及加高加強」案件資料登錄',
             businessTitle: '附表2-「中央管區排防洪設施新建及加高加強」案件明細表',
-            caseIdIndex: 34,
-            sortOrderIndex: 35,
+            caseIdIndex: 35,
+            sortOrderIndex: 36,
             caseNameIndex: 6,
-            formalLastIndex: 33,
-            hiddenStart: 28,
-            hiddenEnd: 32,
-            totalFundingIndex: 26,
-            budgetAIndex: 23,
+            formalLastIndex: 34,
+            hiddenStart: 29,
+            hiddenEnd: 33,
+            totalFundingIndex: 27,
+            budgetAIndex: 24,
             optionalOtherIndex: 10,
-            conditionalLandCostIndex: 18,
-            editableEndIndex: 27,
-            carbonIndex: 27,
+            conditionalLandCostIndex: 19,
+            editableEndIndex: 28,
+            carbonIndex: 28,
             managerHeaders: ["項次", "案件名稱", "縣市", "鄉鎮市", "排水名稱", "操作"]
         },
 
@@ -7346,6 +7346,8 @@
             ".appendix1-only":
                 appendixType ===
                 "appendix1",
+            ".appendix12-hydro-only":
+                appendixType === "appendix1" || appendixType === "appendix2",
             ".appendix2-only":
                 appendixType ===
                 "appendix2",
@@ -7410,8 +7412,10 @@
             appendixType ===
             "appendix1";
 
+        const hasHydroScore = isAppendix1 || appendixType === "appendix2";
+
         ecologySectionTitle.textContent =
-            isAppendix1
+            hasHydroScore
                 ? "生態檢核、小水力"
                 : "生態檢核";
 
@@ -7421,7 +7425,7 @@
         );
 
         ecologyGrid.classList.add(
-            isAppendix1
+            hasHydroScore
                 ? "two-col"
                 : "one-col"
         );
@@ -7434,9 +7438,9 @@
         if (hydroScoreInput) {
 
             hydroScoreInput.disabled =
-                !isAppendix1;
+                !hasHydroScore;
 
-            if (!isAppendix1) {
+            if (!hasHydroScore) {
                 hydroScoreInput.value =
                     "";
             }
@@ -8333,18 +8337,19 @@
             setFieldValue("ecoLandscapeLength", row[13]);
             setFieldValue("envImprovementArea", row[14]);
             setFieldValue("ecologyCheck", row[15]);
+            setFieldValue("hydroScore", row[16]);
 
-            setFieldValue("landStatus", row[17]);
-            setFieldValue("landAcquisitionCost", row[18]);
-            setFieldValue("marketValuationSubmitted", row[19]);
-            setFieldValue("plannedStart", dateForInput(row[20]));
-            setFieldValue("plannedFinish", dateForInput(row[21]));
+            setFieldValue("landStatus", row[18]);
+            setFieldValue("landAcquisitionCost", row[19]);
+            setFieldValue("marketValuationSubmitted", row[20]);
+            setFieldValue("plannedStart", dateForInput(row[21]));
+            setFieldValue("plannedFinish", dateForInput(row[22]));
             updatePlannedDuration();
-            setFieldValue("budget116", row[23]);
-            setFieldValue("budget117", row[24]);
-            setFieldValue("budget118", row[25]);
-            setFieldValue("estimatedCarbon", row[27]);
-            setFieldValue("remarks", row[33]);
+            setFieldValue("budget116", row[24]);
+            setFieldValue("budget117", row[25]);
+            setFieldValue("budget118", row[26]);
+            setFieldValue("estimatedCarbon", row[28]);
+            setFieldValue("remarks", row[34]);
 
         } else if (
             appendixType ===
@@ -8811,7 +8816,8 @@
             { id: "drainageSystem", label: "排水系統" },
             { id: "drainageName", label: "排水名稱" },
             { id: "leveeLength", label: "堤防(公尺)" },
-            { id: "revetmentLength", label: "護岸(公尺)" }
+            { id: "revetmentLength", label: "護岸(公尺)" },
+            { id: "hydroScore", label: "河川小水力發電潛力案場初評結果" }
         ],
 
         appendix3: [
@@ -9523,6 +9529,7 @@
                     <th rowspan="2">案件名稱</th>
                     <th colspan="4">提報工程內容</th>
                     <th rowspan="2">是否辦理核定階段生態檢核<br>(是/否)</th>
+                    <th rowspan="2">河川小水力發電潛力案場初評結果(請填列分數)<br>分數≧4者，列為具潛力案例，可持續評估<br>分數&lt;4者，列為不具潛力案例第二階段免評</th>
                     <th rowspan="2">座標點位<br>(TWD97，經緯度)</th>
                     ${landCostHeader}
                     <th colspan="3">年度預估使用經費(千元)</th>
@@ -9807,15 +9814,15 @@ function getBusinessVisibleColumnIndexes(
             35
         ],
 
-        // A～AH：
-        // 移除 L:O 預期工程效益、R/T 用地欄位、U:W 預定期程。
+        // A～AI：
+        // 移除 L:O 預期工程效益、S/U 用地欄位、V:X 預定期程。
         appendix2: [
             0, 1, 2, 3, 4, 5, 6,
             7, 8, 9, 10,
-            15, 16,
-            18,
-            23, 24, 25, 26, 27,
-            33
+            15, 16, 17,
+            19,
+            24, 25, 26, 27, 28,
+            34
         ],
 
         // A～AH：
@@ -14515,13 +14522,13 @@ function openViewLineMap(
         drainageName: 5,   // F 排水名稱
         caseName: 6,       // G 案件名稱
 
-        budget116: 23,     // X
-        budget117: 24,     // Y
-        budget118: 25,     // Z
+        budget116: 24,     // Y
+        budget117: 25,     // Z
+        budget118: 26,     // AA
 
-        totalFunding: 26,  // AA 經費需求
-        carbon: 27,        // AB 預估碳排量
-        caseId: 34         // AI 系統案件ID
+        totalFunding: 27,  // AB 經費需求
+        carbon: 28,        // AC 預估碳排量
+        caseId: 35         // AJ 系統案件ID
     };
 
     function parseSheetNumber(value) {
@@ -15081,11 +15088,11 @@ function openViewLineMap(
                 6,  // 案件名稱
                 7,  // 建造物名稱
                 15, // 生態檢核
-                16, // 工程範圍代表座標點位
-                23, // 116年
-                24, // 117年
-                25, // 118年
-                26, // 經費需求
+                17, // 工程範圍代表座標點位
+                24, // 116年
+                25, // 117年
+                26, // 118年
+                27, // 經費需求
 
                 // 附表2專用必填
                 // 「排水系統」本身未另存欄位；
@@ -15093,6 +15100,7 @@ function openViewLineMap(
                 5,  // 排水名稱（同時代表排水系統已有效選定）
                 8,  // 堤防
                 9   // 護岸
+                // 舊案 Q 欄可能尚未補評分：避免儀表板把原有案件排除。
             ],
 
             appendix3: [
