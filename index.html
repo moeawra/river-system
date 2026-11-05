@@ -1385,7 +1385,7 @@
 <div class="login-hint">
     例如：第Ｏ河川分署、ＯＯＯＯ組
 </div>
-            <input id="loginCode" type="text" inputmode="numeric" maxlength="4" autocomplete="off" placeholder="請輸入登入碼">
+            <input id="loginCode" type="text" inputmode="numeric" autocomplete="off" placeholder="請輸入登入碼">
 
             <button type="button" id="loginButton" class="primary-button">
                 登入
@@ -1433,7 +1433,7 @@
                 <button type="button" id="generalLoginControlClose" aria-label="關閉管理視窗">×</button>
             </header>
             <div class="general-login-control-content">
-                <p class="general-login-control-note">僅管制河川分署、一般組室及高屏溪流域管理委員會。<strong>管理者與河川海岸組不受限制</strong>，仍可登入及辦理案件審查。</p>
+                <p class="general-login-control-note">僅管制河川分署、其他一般組室及高屏溪流域管理委員會。<strong>管理者、河川海岸組及水文技術組不受限制</strong>，仍可依原有權限登入及辦理業務。</p>
                 <p id="generalLoginControlCurrent" class="general-login-control-current">正在讀取系統設定…</p>
                 <fieldset id="generalLoginControlFields" disabled>
                     <legend>一般帳號登入狀態</legend>
@@ -1445,7 +1445,7 @@
                         <input id="generalLoginDeadlineDate" type="date" min="2020-01-01" max="2100-12-31" disabled>
                     </div>
                 </fieldset>
-                <p class="general-login-control-note">關閉後，一般帳號既有的登入憑證也會失效；重新開放後必須重新登入。若截止日期已過，請取消自動截止或改為未來日期，才能重新開放。</p>
+                <p class="general-login-control-note">關閉後，受管制帳號既有的登入憑證也會失效；重新開放後必須重新登入。管理者、河川海岸組及水文技術組不受影響。若截止日期已過，請取消自動截止或改為未來日期，才能重新開放。</p>
                 <p id="generalLoginControlMessage" class="general-login-control-message" role="status"></p>
                 <div class="general-login-control-actions">
                     <button type="button" id="generalLoginControlReload" class="secondary-button">重新載入設定</button>
@@ -2981,17 +2981,12 @@
         }
 
 
-        if (
-            !/^\d{4}$/.test(password)
-        ) {
-
+        // 不在前端揭露登入碼位數；正確性由後端統一驗證。
+        if (!password) {
             loginMessage.textContent =
                 "機關／單位名稱或登入碼錯誤，請重新確認。";
-
             loginCode.focus();
-
             return;
-
         }
 
 
@@ -27831,7 +27826,7 @@ if (table1AdminRoleSwitchSelectSafe_) {
 
 
 // =====================================================
-// 管理者：全體一般帳號登入與填報期限管理（河川海岸組例外）
+// 管理者：一般帳號登入與填報期限管理（管理者、河川海岸組、水文技術組例外）
 // 與後端 readGeneralLoginControl / saveGeneralLoginControl 同步。
 // =====================================================
 const generalLoginModal_ = document.getElementById('generalLoginControlModal');
@@ -27877,7 +27872,7 @@ function populateGeneralLoginControl_(control) {
     const reason = control.manualClosed ? '手動關閉' :
         (control.deadlineClosed ? '已達自動截止期限' : '開放中');
     generalLoginCurrent_.textContent = '目前一般帳號：' + reason +
-        '（管理者及河川海岸組維持正常）';
+        '（管理者、河川海岸組及水文技術組維持正常）';
 }
 
 function generalLoginControlRequest_(action, values) {
@@ -27920,7 +27915,7 @@ function generalLoginControlRequest_(action, values) {
         }
         populateGeneralLoginControl_(response.control);
         generalLoginMessage_.textContent = action === 'saveGeneralLoginControl'
-            ? '設定已儲存。一般帳號權限已由後端立即生效。' : '';
+            ? '設定已儲存。登入管制設定已由後端立即生效。' : '';
     }
     window[callback] = function(response) { finish(response, ''); };
     script.onerror = function() { finish(null, '無法連線到 Apps Script，請確認部署版本後重試。'); };
@@ -27963,8 +27958,8 @@ generalLoginSave_.addEventListener('click', function() {
         return;
     }
     const confirmText = manualClosed
-        ? '確定立即關閉所有一般帳號嗎？分署、組室及高屏溪委員會的現有登入憑證將失效；河川海岸組仍可繼續審查。'
-        : '確定儲存一般帳號開放與截止設定嗎？若截止日期已過，自動關閉仍會生效。若關閉或重新開放，既有一般帳號需重新登入。';
+        ? '確定立即關閉受管制的一般帳號嗎？分署、其他一般組室及高屏溪委員會的現有登入憑證將失效；管理者、河川海岸組及水文技術組維持正常。'
+        : '確定儲存一般帳號開放與截止設定嗎？若截止日期已過，自動關閉仍會生效。若關閉或重新開放，受管制帳號需重新登入；三類例外帳號不受影響。';
     if (!window.confirm(confirmText)) return;
     generalLoginControlRequest_('saveGeneralLoginControl', {
         manualClosed:String(manualClosed), autoEnabled:String(autoEnabled),
