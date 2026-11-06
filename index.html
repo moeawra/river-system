@@ -1293,6 +1293,34 @@
         @media(max-width:760px) { .admin-login-control-open { margin-left:0; width:100%; } }
 
 
+        /* 管理者個別帳號登入管制：19個單位分組管理。 */
+        .general-login-control-panel { width:min(800px,96vw); }
+        .account-access-section { margin:20px 0; padding:15px; border:1px solid #cbd7df; border-radius:7px; }
+        .account-access-heading { display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; }
+        .account-access-heading h3 { font-size:17px; margin:0; }
+        .account-access-summary { font-size:13px; color:#536575; margin:6px 0 12px; }
+        .account-access-tabs { display:flex; gap:6px; flex-wrap:wrap; margin:12px 0; }
+        .account-access-tab { border:1px solid #9eb3c3; background:#fff; padding:8px 12px; font:inherit; font-size:13px; border-radius:5px; color:#284c64; cursor:pointer; }
+        .account-access-tab.active { background:#17698b; border-color:#17698b; color:white; font-weight:700; }
+        .account-access-tab:disabled { cursor:not-allowed; opacity:.5; }
+        .account-access-list { max-height:360px; overflow-y:auto; border:1px solid #d8e1e7; border-radius:5px; }
+        .account-access-row { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:11px 12px; border-bottom:1px solid #e5ebf0; }
+        .account-access-row:last-child { border-bottom:0; }
+        .account-access-unit { font-size:14px; font-weight:700; }
+        .account-access-effective { font-size:12px; color:#556675; margin-top:4px; }
+        .account-access-effective.is-closed { color:#a23d32; }
+        .account-access-toggle { display:inline-flex; align-items:center; gap:8px; white-space:nowrap; cursor:pointer; font-size:13px; }
+        .account-access-toggle input { height:18px; width:18px; accent-color:#197d83; cursor:pointer; }
+        .account-access-toggle input:disabled { cursor:not-allowed; }
+        .account-access-reason { border-top:1px solid #e2e8ed; margin-top:14px; padding-top:12px; }
+        .account-access-reason label { display:block; font-weight:700; font-size:13px; margin-bottom:5px; }
+        .account-access-reason select,.account-access-reason textarea { width:100%; max-width:100%; padding:8px; border:1px solid #9fb4c1; border-radius:4px; font:inherit; box-sizing:border-box; margin-bottom:10px; }
+        .account-access-reason textarea { resize:vertical; min-height:55px; }
+        .account-access-footer { display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; }
+        .account-access-message { color:#915020; font-size:13px; min-height:18px; margin:7px 0 10px; }
+        .account-access-unsaved { font-size:13px; color:#a45f0c; }
+        @media(max-width:760px) { .account-access-row { align-items:flex-start; } .general-login-control-content { padding:14px; } }
+
         /* 管理者案件名稱建議管理：僅開啟管理視窗時顯示。 */
         .admin-case-template-open { padding:9px 12px;border:1px solid #6d97a8;background:#fff;color:#164457;border-radius:4px;font-weight:700;font-family:inherit;cursor:pointer;white-space:nowrap; }
         .admin-case-template-open:hover { background:#e6f3f6; }
@@ -1433,7 +1461,7 @@
                 <button type="button" id="generalLoginControlClose" aria-label="關閉管理視窗">×</button>
             </header>
             <div class="general-login-control-content">
-                <p class="general-login-control-note">僅管制河川分署、其他一般組室及高屏溪流域管理委員會。<strong>管理者、河川海岸組及水文技術組不受限制</strong>，仍可依原有權限登入及辦理業務。</p>
+                <p class="general-login-control-note">全體登入總開關管制河川分署、其他一般組室及高屏溪流域管理委員會。<strong>管理者、河川海岸組及水文技術組豁免全體總開關</strong>；水文技術組仍可被個別關閉，管理者及河川海岸組不可被個別關閉。</p>
                 <p id="generalLoginControlCurrent" class="general-login-control-current">正在讀取系統設定…</p>
                 <fieldset id="generalLoginControlFields" disabled>
                     <legend>一般帳號登入狀態</legend>
@@ -1445,7 +1473,36 @@
                         <input id="generalLoginDeadlineDate" type="date" min="2020-01-01" max="2100-12-31" disabled>
                     </div>
                 </fieldset>
-                <p class="general-login-control-note">關閉後，受管制帳號既有的登入憑證也會失效；重新開放後必須重新登入。管理者、河川海岸組及水文技術組不受影響。若截止日期已過，請取消自動截止或改為未來日期，才能重新開放。</p>
+                <p class="general-login-control-note">全體關閉時，受管制帳號的登入憑證失效；重新開放後必須重新登入。管理者、河川海岸組及水文技術組豁免此總開關。若截止日期已過，請取消自動截止或改為未來日期，才能重新開放。</p>
+                <section class="account-access-section" aria-labelledby="accountAccessTitle">
+                    <div class="account-access-heading">
+                        <h3 id="accountAccessTitle">個別帳號登入管制</h3>
+                        <span id="accountAccessSummary" class="account-access-summary">尚未載入設定</span>
+                    </div>
+                    <p class="general-login-control-note">各單位可獨立開放或關閉。個別關閉會立即撤銷該單位既有 Session，且不會因全體總開關重新開放而自動解除。管理者仍可代為操作已關閉單位，河川海岸組可持續審查。</p>
+                    <div class="account-access-tabs" id="accountAccessTabs" role="group" aria-label="單位分類">
+                        <button type="button" class="account-access-tab active" data-access-group="division" disabled>河川分署（10）</button>
+                        <button type="button" class="account-access-tab" data-access-group="office" disabled>一般組室（8）</button>
+                        <button type="button" class="account-access-tab" data-access-group="committee" disabled>其他單位（1）</button>
+                    </div>
+                    <div id="accountAccessRows" class="account-access-list" aria-live="polite"><div class="account-access-row">請先載入管理者設定</div></div>
+                    <div class="account-access-reason">
+                        <label for="accountAccessReason">本次操作原因（有變更時必填）</label>
+                        <select id="accountAccessReason" disabled>
+                            <option value="">請選擇原因</option>
+                            <option value="已完成填報">已完成填報</option>
+                            <option value="補正資料">補正資料</option>
+                            <option value="其他">其他</option>
+                        </select>
+                        <label for="accountAccessNote">補充說明（選填，最多120字）</label>
+                        <textarea id="accountAccessNote" maxlength="120" disabled placeholder="例如：第一分署已完成填報，關閉登入權限"></textarea>
+                    </div>
+                    <p id="accountAccessMessage" class="account-access-message" role="status"></p>
+                    <div class="account-access-footer">
+                        <span id="accountAccessUnsaved" class="account-access-unsaved">個別設定尚未變更</span>
+                        <button type="button" id="accountAccessSave" class="primary-button" disabled>儲存個別帳號設定</button>
+                    </div>
+                </section>
                 <p id="generalLoginControlMessage" class="general-login-control-message" role="status"></p>
                 <div class="general-login-control-actions">
                     <button type="button" id="generalLoginControlReload" class="secondary-button">重新載入設定</button>
@@ -27860,6 +27917,139 @@ const generalLoginReload_ = document.getElementById('generalLoginControlReload')
 let generalLoginRevision_ = null;
 let generalLoginRequest_ = null;
 let generalLoginSequence_ = 0;
+// 各帳號在 server 端以固定白名單驗證；前端只顯示及回傳 server 已核准的 key。
+let accountAccessRevision_ = null;
+let accountAccessRecords_ = [];
+let accountAccessDraft_ = {};
+let accountAccessActiveGroup_ = 'division';
+const accountAccessRows_ = document.getElementById('accountAccessRows');
+const accountAccessTabs_ = document.getElementById('accountAccessTabs');
+const accountAccessReason_ = document.getElementById('accountAccessReason');
+const accountAccessNote_ = document.getElementById('accountAccessNote');
+const accountAccessMessage_ = document.getElementById('accountAccessMessage');
+const accountAccessSummary_ = document.getElementById('accountAccessSummary');
+const accountAccessUnsaved_ = document.getElementById('accountAccessUnsaved');
+const accountAccessSave_ = document.getElementById('accountAccessSave');
+
+function accountAccessPendingChanges_() {
+    return accountAccessRecords_.filter(function(item) {
+        return !!accountAccessDraft_[item.key] !== !!item.closed;
+    }).map(function(item) { return {key:item.key, closed:!!accountAccessDraft_[item.key]}; });
+}
+
+function accountAccessSetBusy_(busy) {
+    const canEdit = !busy && accountAccessRevision_ !== null && adminMasterAuthenticated;
+    accountAccessTabs_.querySelectorAll('button').forEach(function(button) { button.disabled = !canEdit; });
+    accountAccessReason_.disabled = !canEdit;
+    accountAccessNote_.disabled = !canEdit;
+    accountAccessRows_.querySelectorAll('input').forEach(function(input) { input.disabled = !canEdit; });
+    accountAccessSave_.disabled = !canEdit || !accountAccessPendingChanges_().length;
+}
+
+function renderAccountAccessRows_() {
+    accountAccessRows_.replaceChildren();
+    const items = accountAccessRecords_.filter(function(item) { return item.group === accountAccessActiveGroup_; });
+    if (!items.length) {
+        const empty = document.createElement('div');
+        empty.className = 'account-access-row';
+        empty.textContent = '此類別尚無帳號資料，請重新載入。';
+        accountAccessRows_.appendChild(empty);
+    }
+    items.forEach(function(item) {
+        const open = !accountAccessDraft_[item.key];
+        const effectiveClosed = !open || !!item.generalRestricted;
+        const row = document.createElement('div');
+        row.className = 'account-access-row';
+        const details = document.createElement('div');
+        const name = document.createElement('div');
+        name.className = 'account-access-unit';
+        name.textContent = item.name;
+        const status = document.createElement('div');
+        status.className = 'account-access-effective' + (effectiveClosed ? ' is-closed' : '');
+        status.textContent = !open ? '個別關閉，無法登入' :
+            (item.generalRestricted ? '個別開放，但全體管制關閉中' : '個別開放，可依原有驗證方式登入');
+        if (item.updatedAt) status.title = '最近修改：' + item.updatedAt;
+        details.appendChild(name);
+        details.appendChild(status);
+        const label = document.createElement('label');
+        label.className = 'account-access-toggle';
+        const labelText = document.createElement('span');
+        labelText.textContent = open ? '開放' : '關閉';
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.checked = open;
+        checkbox.disabled = !!generalLoginRequest_ || accountAccessRevision_ === null;
+        checkbox.setAttribute('aria-label', item.name + '個別登入開放');
+        checkbox.addEventListener('change', function() {
+            accountAccessDraft_[item.key] = !checkbox.checked;
+            accountAccessMessage_.textContent = '';
+            renderAccountAccessRows_();
+        });
+        label.appendChild(labelText);
+        label.appendChild(checkbox);
+        row.appendChild(details);
+        row.appendChild(label);
+        accountAccessRows_.appendChild(row);
+    });
+    accountAccessTabs_.querySelectorAll('button').forEach(function(button) {
+        button.classList.toggle('active', button.dataset.accessGroup === accountAccessActiveGroup_);
+        button.setAttribute('aria-pressed', String(button.dataset.accessGroup === accountAccessActiveGroup_));
+    });
+    const count = accountAccessPendingChanges_().length;
+    accountAccessUnsaved_.textContent = count ? '尚有 ' + count + ' 個單位待儲存' : '個別設定尚未變更';
+    accountAccessSave_.disabled = !!generalLoginRequest_ || accountAccessRevision_ === null || !count;
+}
+
+function populateAccountAccessControl_(data) {
+    if (!data || !Number.isSafeInteger(Number(data.revision)) || !Array.isArray(data.accounts) || data.accounts.length !== 19) return;
+    accountAccessRevision_ = Number(data.revision);
+    accountAccessRecords_ = data.accounts.map(function(item) { return {
+        key:item.key, name:item.name, group:item.group,
+        closed:item.closed === true, generalRestricted:item.generalRestricted === true,
+        updatedAt:item.updatedAt || ''
+    }; });
+    accountAccessDraft_ = {};
+    accountAccessRecords_.forEach(function(item) { accountAccessDraft_[item.key] = item.closed; });
+    accountAccessSummary_.textContent = accountAccessRecords_.filter(function(item) { return item.closed; }).length + ' 個單位個別關閉／共19個';
+    accountAccessReason_.value = '';
+    accountAccessNote_.value = '';
+    accountAccessMessage_.textContent = '';
+    renderAccountAccessRows_();
+    accountAccessSetBusy_(false);
+}
+
+accountAccessTabs_.querySelectorAll('button').forEach(function(button) {
+    button.addEventListener('click', function() {
+        accountAccessActiveGroup_ = button.dataset.accessGroup;
+        renderAccountAccessRows_();
+    });
+});
+accountAccessSave_.addEventListener('click', function() {
+    if (generalLoginRequest_ || accountAccessRevision_ === null || !adminMasterAuthenticated) return;
+    const changes = accountAccessPendingChanges_();
+    if (!changes.length) return;
+    const reason = accountAccessReason_.value;
+    const note = accountAccessNote_.value.trim();
+    if (!['已完成填報','補正資料','其他'].includes(reason)) {
+        accountAccessMessage_.textContent = '請先選擇本次開放或關閉的原因。';
+        accountAccessReason_.focus();
+        return;
+    }
+    if (note.length > 120) {
+        accountAccessMessage_.textContent = '補充說明請勿超過120個字。';
+        return;
+    }
+    const description = changes.map(function(change) {
+        const item = accountAccessRecords_.find(function(row) { return row.key === change.key; });
+        return '・' + (item ? item.name : change.key) + '：' + (change.closed ? '關閉' : '開放');
+    }).join('\n');
+    if (!window.confirm('確定儲存以下 ' + changes.length + ' 個單位的個別登入設定嗎？\n' +
+        description + '\n\n關閉後，該單位現有登入憑證立即失效；重新開放後必須重新登入。管理者及河川海岸組權限不受影響。')) return;
+    generalLoginControlRequest_('saveAccountAccessControl', {
+        expectedRevision:String(accountAccessRevision_),
+        changes:JSON.stringify(changes), reason:reason, note:note
+    });
+});
 
 function resetGeneralLoginControlUi_() {
     if (generalLoginRequest_) {
@@ -27869,6 +28059,15 @@ function resetGeneralLoginControlUi_() {
         generalLoginRequest_ = null;
     }
     generalLoginRevision_ = null;
+    accountAccessRevision_ = null;
+    accountAccessRecords_ = [];
+    accountAccessDraft_ = {};
+    accountAccessSummary_.textContent = '尚未載入設定';
+    accountAccessReason_.value = '';
+    accountAccessNote_.value = '';
+    accountAccessMessage_.textContent = '';
+    renderAccountAccessRows_();
+    accountAccessSetBusy_(false);
     generalLoginFields_.disabled = true;
     generalLoginSave_.disabled = true;
     generalLoginCurrent_.textContent = '尚未載入設定';
@@ -27890,7 +28089,7 @@ function populateGeneralLoginControl_(control) {
     const reason = control.manualClosed ? '手動關閉' :
         (control.deadlineClosed ? '已達自動截止期限' : '開放中');
     generalLoginCurrent_.textContent = '目前一般帳號：' + reason +
-        '（管理者、河川海岸組及水文技術組維持正常）';
+        '（管理者、河川海岸組豁免；水文技術組依個別設定）';
 }
 
 function generalLoginControlRequest_(action, values) {
@@ -27902,10 +28101,16 @@ function generalLoginControlRequest_(action, values) {
     const params = new URLSearchParams({ action:action, token:token, requestId:requestId,
         callback:callback, _:String(Date.now()) });
     Object.keys(values || {}).forEach(function(key) { params.set(key, values[key]); });
-    generalLoginMessage_.textContent = action === 'saveGeneralLoginControl' ? '正在儲存設定…' : '正在讀取設定…';
+    const isIndividual = action === 'saveAccountAccessControl';
+    if (isIndividual) {
+        accountAccessMessage_.textContent = '正在儲存個別帳號設定…';
+    } else {
+        generalLoginMessage_.textContent = action === 'saveGeneralLoginControl' ? '正在儲存設定…' : '正在讀取設定…';
+    }
     generalLoginFields_.disabled = true;
     generalLoginSave_.disabled = true;
     generalLoginReload_.disabled = true;
+    accountAccessSetBusy_(true);
     const script = document.createElement('script');
     script.id = 'generalLoginControlJsonp';
     script.src = GAS_URL + '?' + params.toString();
@@ -27923,17 +28128,28 @@ function generalLoginControlRequest_(action, values) {
             showLoginGate('管理者登入已失效，請重新登入。');
             return;
         }
-        if (!response || response.responseType !== 'generalLoginControl' ||
-            response.requestId !== requestId || response.success !== true || !response.control) {
+        const expectedType = isIndividual ? 'accountAccessControl' : 'generalLoginControl';
+        if (!response || response.responseType !== expectedType ||
+            response.requestId !== requestId || response.success !== true || !response.control || !response.accountControl) {
             generalLoginFields_.disabled = generalLoginRevision_ === null;
             generalLoginSave_.disabled = generalLoginRevision_ === null;
-            generalLoginMessage_.textContent = errorText ||
-                (response && response.message ? response.message : '登入管制設定未完成，請重新載入。');
+            accountAccessSetBusy_(false);
+            const message = errorText || (response && response.message ? response.message :
+                '登入管制設定未完成，請重新載入。');
+            if (isIndividual) accountAccessMessage_.textContent = message;
+            else generalLoginMessage_.textContent = message;
             return;
         }
         populateGeneralLoginControl_(response.control);
-        generalLoginMessage_.textContent = action === 'saveGeneralLoginControl'
-            ? '設定已儲存。登入管制設定已由後端立即生效。' : '';
+        populateAccountAccessControl_(response.accountControl);
+        if (isIndividual) {
+            accountAccessMessage_.textContent = response.auditWarning === true
+                ? '個別帳號設定已生效，但稽核紀錄寫入失敗，請檢查管理者操作紀錄。'
+                : '個別帳號設定已儲存並立即生效。';
+        } else {
+            generalLoginMessage_.textContent = action === 'saveGeneralLoginControl'
+                ? '全體管制設定已儲存並立即生效。' : '';
+        }
     }
     window[callback] = function(response) { finish(response, ''); };
     script.onerror = function() { finish(null, '無法連線到 Apps Script，請確認部署版本後重試。'); };
@@ -27963,10 +28179,13 @@ generalLoginAuto_.addEventListener('change', function() {
     generalLoginDate_.disabled = !generalLoginAuto_.checked;
 });
 generalLoginReload_.addEventListener('click', function() {
-    if (!generalLoginRequest_) generalLoginControlRequest_('readGeneralLoginControl', {});
+    if (generalLoginRequest_) return;
+    if (accountAccessPendingChanges_().length && !window.confirm('重新載入會捨棄尚未儲存的個別帳號變更，確定繼續嗎？')) return;
+    generalLoginControlRequest_('readGeneralLoginControl', {});
 });
 generalLoginSave_.addEventListener('click', function() {
     if (!adminMasterAuthenticated || generalLoginRevision_ === null || generalLoginRequest_) return;
+    if (accountAccessPendingChanges_().length && !window.confirm('個別帳號仍有尚未儲存的變更。先儲存全體設定會捨棄個別帳號的未儲存變更，確定繼續嗎？')) return;
     const selected = document.querySelector('input[name="generalLoginManual"]:checked');
     const manualClosed = !!(selected && selected.value === 'true');
     const autoEnabled = generalLoginAuto_.checked;
@@ -27976,8 +28195,8 @@ generalLoginSave_.addEventListener('click', function() {
         return;
     }
     const confirmText = manualClosed
-        ? '確定立即關閉受管制的一般帳號嗎？分署、其他一般組室及高屏溪委員會的現有登入憑證將失效；管理者、河川海岸組及水文技術組維持正常。'
-        : '確定儲存一般帳號開放與截止設定嗎？若截止日期已過，自動關閉仍會生效。若關閉或重新開放，受管制帳號需重新登入；三類例外帳號不受影響。';
+        ? '確定立即關閉受管制的一般帳號嗎？分署、其他一般組室及高屏溪委員會的現有登入憑證將失效；管理者、河川海岸組及水文技術組仍豁免總開關，但個別關閉的水文技術組仍不得登入。'
+        : '確定儲存一般帳號開放與截止設定嗎？若截止日期已過，自動關閉仍會生效。個別已關閉的帳號不會因此重新開放；管理者、河川海岸組和水文技術組豁免此總開關。';
     if (!window.confirm(confirmText)) return;
     generalLoginControlRequest_('saveGeneralLoginControl', {
         manualClosed:String(manualClosed), autoEnabled:String(autoEnabled),
